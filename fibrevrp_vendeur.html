@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FibreVRP">
+<meta name="theme-color" content="#080c10">
+<title>FibreVRP — Vendeur</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+:root {
+  --bg: #080c10;
+  --surface: #0d1318;
+  --surface2: #111820;
+  --border: #1a2530;
+  --accent: #00e5ff;
+  --green: #39d353;
+  --red: #ff4d6d;
+  --orange: #ff8c42;
+  --yellow: #ffd60a;
+  --purple: #c77dff;
+  --text: #e8f0f8;
+  --muted: #4a6070;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
+}
+
+/* HEADER */
+.header {
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  position: sticky; top:0; z-index:50;
+}
+.header-logo {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.5rem;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+}
+.header-vendeur {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  text-align: right;
+}
+.header-vendeur strong { color: var(--text); display: block; }
+
+/* MAIN */
+.main { padding: 16px; }
+
+/* SETUP VENDEUR */
+.setup-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.setup-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1.3rem;
+  color: var(--accent);
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+.input-group { margin-bottom: 14px; }
+.input-label { font-size: 0.7rem; color: var(--muted); font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
+.input-field {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-field:focus { border-color: var(--accent); }
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+.btn-primary:active { transform: scale(0.98); }
+
+/* STATS DU JOUR */
+.stats-today {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-today {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+}
+.stat-today-val {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-today-label {
+  font-size: 0.62rem;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  text-transform: uppercase;
+}
+
+/* SECTION TITRE */
+.section-title {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title span { color: var(--text); }
+
+/* UPLOAD */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+  background: var(--surface);
+}
+.upload-zone:active { border-color: var(--accent); background: rgba(0,229,255,0.04); }
+.upload-icon { font-size: 2rem; margin-bottom: 8px; }
+.upload-text { font-size: 0.82rem; color: var(--muted); }
+input[type=file] { display: none; }
+
+/* ADRESSE CARD */
+.addr-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.addr-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.2s;
+  position: relative;
+}
+.addr-card.prio { border-left: 3px solid var(--yellow); }
+.addr-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+  min-width: 20px;
+}
+.addr-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.addr-info { flex: 1; min-width: 0; }
+.addr-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.addr-sub { font-size: 0.68rem; color: var(--muted); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.addr-locaux {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.addr-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.act-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Syne', sans-serif;
+}
+.act-btn:active { transform: scale(0.95); }
+.act-btn.maps { color: var(--accent); border-color: rgba(0,229,255,0.3); }
+.act-btn.menu { color: var(--accent); border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.08); }
+
+/* NOTE INLINE */
+.note-inline {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(255,214,10,0.06);
+  border-radius: 6px;
+  border-left: 2px solid var(--yellow);
+  font-size: 0.72rem;
+  color: var(--yellow);
+}
+
+/* ACTION SHEET */
+.overlay { position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;display:none; }
+.overlay.on { display:block; }
+.action-sheet {
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  border-radius:20px 20px 0 0;
+  padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+  z-index:1000;
+  transform:translateY(100%);
+  transition:transform 0.3s ease;
+}
+.action-sheet.on { transform:translateY(0); }
+.sheet-handle { width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px; }
+.sheet-addr { font-size:0.82rem;font-weight:700;text-align:center;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.sheet-sub { font-size:0.7rem;color:var(--muted);text-align:center;font-family:DM Mono,monospace;margin-bottom:18px; }
+.sheet-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px; }
+.sheet-btn {
+  padding:14px 10px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--surface2);
+  color:var(--text);
+  font-family:'Syne',sans-serif;
+  font-size:0.82rem;
+  font-weight:600;
+  cursor:pointer;
+  text-align:center;
+  transition:all 0.15s;
+}
+.sheet-btn:active { transform:scale(0.97); }
+.sheet-btn.green { border-color:rgba(57,211,83,0.4);color:var(--green); }
+.sheet-btn.red { border-color:rgba(255,77,109,0.4);color:var(--red); }
+.sheet-btn.yellow { border-color:rgba(255,214,10,0.4);color:var(--yellow); }
+.sheet-btn.cyan { border-color:rgba(0,229,255,0.4);color:var(--accent); }
+.sheet-btn.orange { border-color:rgba(255,140,66,0.4);color:var(--orange); }
+.sheet-btn.purple { border-color:rgba(199,125,255,0.4);color:var(--purple); }
+.sheet-btn.full { grid-column:span 2; }
+.sheet-cancel {
+  width:100%;padding:13px;
+  background:transparent;border:1px solid var(--border);
+  border-radius:10px;color:var(--muted);
+  font-family:'Syne',sans-serif;font-size:0.85rem;cursor:pointer;
+}
+
+/* NOTE INPUT */
+.note-input-wrap { margin-bottom:10px;display:none; }
+.note-input {
+  width:100%;padding:12px;
+  background:var(--surface2);border:1px solid var(--accent);
+  border-radius:10px;color:var(--text);
+  font-family:'Syne',sans-serif;font-size:0.88rem;
+  outline:none;resize:none;
+}
+.note-tags { display:flex;gap:6px;flex-wrap:wrap;margin-top:8px; }
+.note-tag {
+  padding:5px 12px;border-radius:20px;
+  border:1px solid var(--border);background:var(--surface2);
+  color:var(--muted);font-size:0.72rem;cursor:pointer;
+  font-family:'Syne',sans-serif;transition:all 0.15s;
+}
+.note-tag:active { transform:scale(0.95); }
+.note-tag.sel { background:rgba(255,214,10,0.1);border-color:var(--yellow);color:var(--yellow); }
+.btn-note-save {
+  width:100%;padding:12px;margin-top:8px;
+  background:var(--yellow);color:#000;border:none;
+  border-radius:10px;font-family:'Syne',sans-serif;
+  font-size:0.85rem;font-weight:700;cursor:pointer;
+}
+
+/* CONTRAT FORM */
+.contrat-form { background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:10px;display:none; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--bg);
+  border-top:1px solid var(--border);
+  padding:10px 20px calc(10px + env(safe-area-inset-bottom));
+  display:flex;justify-content:space-around;
+  z-index:100;
+}
+.nav-btn {
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;cursor:pointer;color:var(--muted);
+  font-family:'Syne',sans-serif;font-size:0.6rem;
+  transition:color 0.2s;padding:4px 12px;border-radius:8px;
+}
+.nav-btn.active { color:var(--accent); }
+.nav-btn .icon { font-size:1.3rem; }
+.nav-badge {
+  position:absolute;top:-4px;right:-4px;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--red);font-size:0.55rem;
+  display:flex;align-items:center;justify-content:center;
+  color:white;font-family:DM Mono,monospace;
+}
+
+/* EXPORT */
+.export-bar {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.export-info { font-size:0.8rem; }
+.export-info strong { color:var(--accent); }
+.btn-export {
+  padding:10px 18px;
+  background:rgba(0,229,255,0.1);
+  border:1px solid rgba(0,229,255,0.3);
+  border-radius:8px;color:var(--accent);
+  font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;
+}
+
+/* TOAST */
+.toast {
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);padding:10px 18px;border-radius:10px;
+  font-size:0.82rem;z-index:9999;opacity:0;
+  transition:all 0.3s;white-space:nowrap;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+.toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+
+/* PAGES */
+.page { display:none; }
+.page.active { display:block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">FibreVRP</div>
+  <div class="header-vendeur" id="headerVendeur">
+    <strong>—</strong>
+    Non connecté
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- PAGE SETUP -->
+  <div class="page active" id="pageSetup">
+    <div class="setup-card">
+      <div class="setup-title">🔌 Connexion Vendeur</div>
+      <div class="input-group">
+        <label class="input-label">Votre prénom</label>
+        <input class="input-field" id="inputPrenom" type="text" placeholder="Ex: Gaël" autocomplete="name">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Secteur du jour</label>
+        <input class="input-field" id="inputSecteur" type="text" placeholder="Ex: Valence Nord">
+      </div>
+      <button class="btn-primary" onclick="connecter()">▶ Commencer la journée</button>
+    </div>
+  </div>
+
+  <!-- PAGE CIRCUIT -->
+  <div class="page" id="pageCircuit">
+
+    <!-- Stats du jour -->
+    <div class="stats-today">
+      <div class="stat-today">
+        <div class="stat-today-val" id="statContrats" style="color:var(--green)">0</div>
+        <div class="stat-today-label">Contrats</div>
+      </div>
+      <div class="stat-today">
+        <div class="stat-today-val" id="statPortes" style="color:var(--accent)">0</div>
+        <div class="stat-today-label">Portes</div>
+      </div>
+      <div class="stat-today">
+        <div class="stat-today-val" id="statNotes" style="color:var(--yellow)">0</div>
+        <div class="stat-today-label">Notes</div>
+      </div>
+    </div>
+
+    <!-- Export bar -->
+    <div class="export-bar" id="exportBar" style="display:none">
+      <div class="export-info"><strong id="exportInfo">0 actions</strong> enregistrées</div>
+      <button class="btn-export" onclick="exporterJournee()">📤 Exporter</button>
+    </div>
+
+    <!-- Upload CSV -->
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvInput').click()">
+      <div class="upload-icon">📂</div>
+      <div class="upload-text">Importer orange_eligibles_final.csv</div>
+    </div>
+    <input type="file" id="csvInput" accept=".csv" onchange="importerCSV(event)">
+
+    <!-- Liste adresses -->
+    <div class="section-title" id="circuitTitle" style="display:none">🗺️ <span id="circuitNom">Circuit du jour</span></div>
+    <div class="addr-list" id="addrList"></div>
+
+  </div>
+
+  <!-- PAGE NOTES -->
+  <div class="page" id="pageNotes">
+    <div class="section-title">📝 <span>Notes terrain du jour</span></div>
+    <div class="addr-list" id="notesList"></div>
+    <div id="notesEmpty" style="text-align:center;padding:40px;color:var(--muted)">
+      <div style="font-size:2.5rem;margin-bottom:8px">📝</div>
+      <div style="font-size:0.82rem">Aucune note pour l'instant</div>
+    </div>
+  </div>
+
+  <!-- PAGE CONTRATS -->
+  <div class="page" id="pageContrats">
+    <div class="section-title">🎉 <span>Contrats signés</span></div>
+    <div class="addr-list" id="contratsList"></div>
+    <div id="contratsEmpty" style="text-align:center;padding:40px;color:var(--muted)">
+      <div style="font-size:2.5rem;margin-bottom:8px">🎉</div>
+      <div style="font-size:0.82rem">Aucun contrat signé aujourd'hui</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav" id="bottomNav" style="display:none">
+  <button class="nav-btn active" onclick="navTo('pageCircuit',this)">
+    <span class="icon">🗺️</span>Circuit
+  </button>
+  <button class="nav-btn" onclick="navTo('pageNotes',this)" style="position:relative">
+    <span class="icon">📝</span>Notes
+    <span class="nav-badge" id="badgeNotes" style="display:none">0</span>
+  </button>
+  <button class="nav-btn" onclick="navTo('pageContrats',this)" style="position:relative">
+    <span class="icon">🎉</span>Contrats
+    <span class="nav-badge" id="badgeContrats" style="display:none;background:var(--green)">0</span>
+  </button>
+</div>
+
+<!-- OVERLAY + ACTION SHEET -->
+<div class="overlay" id="overlay" onclick="fermerSheet()"></div>
+<div class="action-sheet" id="actionSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-addr" id="sheetAddr">—</div>
+  <div class="sheet-sub" id="sheetSub">—</div>
+
+  <!-- Note input (hidden by default) -->
+  <div class="note-input-wrap" id="noteWrap">
+    <textarea class="note-input" id="noteInput" rows="3" placeholder="Saisir une note terrain..."></textarea>
+    <div class="note-tags">
+      <span class="note-tag" onclick="toggleTag(this,'ABS')">👤 Absent</span>
+      <span class="note-tag" onclick="toggleTag(this,'CHER')">💰 Trop cher</span>
+      <span class="note-tag" onclick="toggleTag(this,'FAN SFR')">📵 Fan SFR</span>
+      <span class="note-tag" onclick="toggleTag(this,'FAN FREE')">📵 Fan Free</span>
+      <span class="note-tag" onclick="toggleTag(this,'MAUVAISE EXP')">😤 Mauvaise exp.</span>
+      <span class="note-tag" onclick="toggleTag(this,'ENGAGÉ')">🔒 Engagé</span>
+      <span class="note-tag" onclick="toggleTag(this,'À REPASSER')">🔄 À repasser</span>
+    </div>
+    <button class="btn-note-save" onclick="sauvegarderNote()">💾 Sauvegarder la note</button>
+  </div>
+
+  <div class="sheet-grid" id="sheetBtns">
+    <button class="sheet-btn green" onclick="action('signe')">🎉 Contrat signé !</button>
+    <button class="sheet-btn cyan" onclick="action('maps')">📍 Ouvrir Maps</button>
+    <button class="sheet-btn yellow" onclick="action('note')">📝 Ajouter note</button>
+    <button class="sheet-btn orange" onclick="action('absent')">👤 Absent</button>
+    <button class="sheet-btn red" onclick="action('refus')">❌ Refus</button>
+    <button class="sheet-btn purple" onclick="action('verifier')">🔍 À vérifier</button>
+    <button class="sheet-btn" onclick="action('concurrent')" style="border-color:rgba(255,77,109,0.3);color:var(--red)">🔴 Concurrent</button>
+    <button class="sheet-btn" onclick="action('annuler')" style="color:var(--muted)">↩ Annuler</button>
+  </div>
+  <button class="sheet-cancel" onclick="fermerSheet()">Fermer</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────
+let vendeur = { prenom:'', secteur:'' };
+let adresses = [];
+let actions = [];   // { adresse, action, note, date, heure }
+let menuAdresse = null;
+
+// ── SETUP ─────────────────────────────────────────────────
+function connecter(){
+  const prenom  = document.getElementById('inputPrenom').value.trim();
+  const secteur = document.getElementById('inputSecteur').value.trim();
+  if(!prenom){ toast('Entrez votre prénom'); return; }
+  vendeur = { prenom, secteur };
+  document.getElementById('headerVendeur').innerHTML = `<strong>${prenom}</strong>${secteur||''}`;
+  navPage('pageSetup', 'pageCircuit');
+  document.getElementById('bottomNav').style.display = 'flex';
+  toast(`Bonjour ${prenom} ! 👋`);
+}
+
+// ── NAVIGATION ────────────────────────────────────────────
+function navPage(from, to){
+  document.getElementById(from).classList.remove('active');
+  document.getElementById(to).classList.add('active');
+}
+
+function navTo(pageId, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(pageId==='pageNotes') afficherNotes();
+  if(pageId==='pageContrats') afficherContrats();
+}
+
+// ── IMPORT CSV ────────────────────────────────────────────
+function importerCSV(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    const sep = lines[0].includes(';')?';':',';
+    const h = lines[0].split(sep).map(v=>v.trim().replace(/"/g,'').toLowerCase());
+    const fi = {
+      adresse: h.findIndex(v=>v==='adresse'),
+      commune: h.findIndex(v=>v.includes('commune')),
+      dept:    h.findIndex(v=>v==='dept'),
+      locaux:  h.findIndex(v=>v==='locaux'||v.includes('logloc')),
+      lat:     h.findIndex(v=>v==='lat'),
+      lon:     h.findIndex(v=>v==='lon'),
+      couleur: h.findIndex(v=>v==='couleur'),
+      score:   h.findIndex(v=>v==='score'),
+    };
+    adresses = [];
+    for(let i=1;i<lines.length;i++){
+      const c = lines[i].split(sep).map(v=>v.trim().replace(/"/g,''));
+      const lat = parseFloat(c[fi.lat]), lon = parseFloat(c[fi.lon]);
+      if(isNaN(lat)||isNaN(lon)) continue;
+      adresses.push({
+        adresse: c[fi.adresse]||'',
+        commune: c[fi.commune]||'',
+        dept:    c[fi.dept]||'',
+        locaux:  parseInt(c[fi.locaux])||0,
+        lat, lon,
+        couleur: c[fi.couleur]||'blue',
+        score:   parseFloat(c[fi.score])||0,
+      });
+    }
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('circuitTitle').style.display = 'flex';
+    document.getElementById('circuitNom').textContent = `${adresses.length} adresses — ${vendeur.secteur||'Circuit'}`;
+    afficherAdresses();
+    toast(`✅ ${adresses.length} adresses chargées`);
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// ── AFFICHER ADRESSES ─────────────────────────────────────
+function getHex(couleur){
+  const map = {orange:'#ff8c42',green:'#39d353',red:'#ff4d6d',blue:'#00e5ff'};
+  return map[couleur] || '#4a6070';
+}
+
+function afficherAdresses(){
+  const list = document.getElementById('addrList');
+  const actionsSet = new Set(actions.filter(a=>['signe','refus','concurrent'].includes(a.action)).map(a=>a.adresse));
+  const visible = adresses.filter(a=>!actionsSet.has(a.adresse));
+
+  list.innerHTML = visible.map((a,i)=>{
+    const col = getHex(a.couleur);
+    const prio = a.locaux >= 10;
+    const actionExist = actions.find(ac=>ac.adresse===a.adresse);
+    const noteExist = actions.find(ac=>ac.adresse===a.adresse && ac.note);
+    return `
+    <div class="addr-card${prio?' prio':''}" id="card_${i}">
+      <span class="addr-num">${i+1}</span>
+      <span class="addr-dot" style="background:${col}"></span>
+      <div class="addr-info">
+        <div class="addr-name">${prio?'⭐ ':''}${a.adresse}</div>
+        <div class="addr-sub">${a.commune} (${a.dept}) · ${a.locaux} loc${a.score?' · '+a.score:''}</div>
+        ${noteExist?`<div class="note-inline">📝 ${noteExist.note}</div>`:''}
+        ${actionExist&&actionExist.action!=='note'?`<div style="font-size:0.68rem;color:var(--muted);margin-top:4px">${getActionLabel(actionExist.action)}</div>`:''}
+      </div>
+      <div class="addr-actions">
+        <button class="act-btn maps" onclick="ouvrirMaps('${a.lat}','${a.lon}')">📍</button>
+        <button class="act-btn menu" onclick="ouvrirSheet(${i})">⋯</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  majStats();
+  majExportBar();
+}
+
+function getActionLabel(action){
+  const map = {absent:'👤 Absent',refus:'❌ Refus',concurrent:'🔴 Concurrent',verifier:'🔍 À vérifier',signe:'🎉 Signé'};
+  return map[action]||action;
+}
+
+// ── STATS ─────────────────────────────────────────────────
+function majStats(){
+  const contrats = actions.filter(a=>a.action==='signe').length;
+  const portes   = new Set(actions.map(a=>a.adresse)).size;
+  const notes    = actions.filter(a=>a.note).length;
+  document.getElementById('statContrats').textContent = contrats;
+  document.getElementById('statPortes').textContent   = portes;
+  document.getElementById('statNotes').textContent    = notes;
+
+  const bc = document.getElementById('badgeContrats');
+  const bn = document.getElementById('badgeNotes');
+  bc.textContent = contrats; bc.style.display = contrats?'flex':'none';
+  bn.textContent = notes;    bn.style.display = notes?'flex':'none';
+}
+
+function majExportBar(){
+  const bar = document.getElementById('exportBar');
+  const info = document.getElementById('exportInfo');
+  if(actions.length){
+    bar.style.display = 'flex';
+    info.textContent = `${actions.length} actions`;
+  }
+}
+
+// ── ACTION SHEET ──────────────────────────────────────────
+function ouvrirSheet(idx){
+  const a = adresses.filter(ad=>{
+    const actionsSet = new Set(actions.filter(ac=>['signe','refus','concurrent'].includes(ac.action)).map(ac=>ac.adresse));
+    return !actionsSet.has(ad.adresse);
+  })[idx];
+  if(!a) return;
+  menuAdresse = a;
+  document.getElementById('sheetAddr').textContent = a.adresse.substring(0,50)+(a.adresse.length>50?'...':'');
+  document.getElementById('sheetSub').textContent  = `${a.commune} (${a.dept}) · ${a.locaux} logements`;
+  document.getElementById('noteWrap').style.display = 'none';
+  document.getElementById('noteInput').value = '';
+  document.querySelectorAll('.note-tag').forEach(t=>t.classList.remove('sel'));
+  document.getElementById('actionSheet').classList.add('on');
+  document.getElementById('overlay').classList.add('on');
+}
+
+function fermerSheet(){
+  document.getElementById('actionSheet').classList.remove('on');
+  document.getElementById('overlay').classList.remove('on');
+  menuAdresse = null;
+}
+
+function action(type){
+  if(!menuAdresse) return;
+  const a = menuAdresse;
+
+  if(type === 'maps'){
+    ouvrirMaps(a.lat, a.lon);
+    return;
+  }
+
+  if(type === 'note'){
+    document.getElementById('noteWrap').style.display = 'block';
+    document.getElementById('noteInput').focus();
+    return;
+  }
+
+  if(type === 'annuler'){
+    // Annuler la dernière action pour cette adresse
+    const idx = actions.map(ac=>ac.adresse).lastIndexOf(a.adresse);
+    if(idx>=0){ actions.splice(idx,1); toast('↩ Action annulée'); }
+    fermerSheet();
+    afficherAdresses();
+    return;
+  }
+
+  // Enregistrer l'action
+  actions.push({
+    adresse: a.adresse,
+    commune: a.commune,
+    dept:    a.dept,
+    locaux:  a.locaux,
+    lat:     a.lat,
+    lon:     a.lon,
+    action:  type,
+    note:    '',
+    date:    new Date().toLocaleDateString('fr'),
+    heure:   new Date().toLocaleTimeString('fr', {hour:'2-digit',minute:'2-digit'}),
+    vendeur: vendeur.prenom,
+    secteur: vendeur.secteur,
+  });
+
+  const labels = { signe:'🎉 Contrat enregistré !', refus:'❌ Refus noté', absent:'👤 Absent noté', concurrent:'🔴 Concurrent noté', verifier:'🔍 À vérifier ajouté' };
+  toast(labels[type]||'✅ Action enregistrée');
+  fermerSheet();
+  afficherAdresses();
+}
+
+function sauvegarderNote(){
+  if(!menuAdresse) return;
+  const tags = [...document.querySelectorAll('.note-tag.sel')].map(t=>t.textContent.trim()).join(' · ');
+  const texte = document.getElementById('noteInput').value.trim();
+  const note = [tags, texte].filter(Boolean).join(' — ');
+  if(!note){ toast('Saisissez une note'); return; }
+
+  actions.push({
+    adresse: menuAdresse.adresse,
+    commune: menuAdresse.commune,
+    dept:    menuAdresse.dept,
+    locaux:  menuAdresse.locaux,
+    lat:     menuAdresse.lat,
+    lon:     menuAdresse.lon,
+    action:  'note',
+    note:    note,
+    date:    new Date().toLocaleDateString('fr'),
+    heure:   new Date().toLocaleTimeString('fr', {hour:'2-digit',minute:'2-digit'}),
+    vendeur: vendeur.prenom,
+    secteur: vendeur.secteur,
+  });
+
+  toast('📝 Note sauvegardée !');
+  fermerSheet();
+  afficherAdresses();
+}
+
+function toggleTag(el, tag){
+  el.classList.toggle('sel');
+  // Ajouter le tag dans l'input
+  const input = document.getElementById('noteInput');
+  if(el.classList.contains('sel')){
+    input.value = (input.value ? input.value + ' · ' : '') + tag;
+  }
+}
+
+// ── MAPS ─────────────────────────────────────────────────
+function ouvrirMaps(lat, lon){
+  const isIOS = /iPhone|iPad/.test(navigator.userAgent);
+  const url = isIOS ? `comgooglemaps://?q=${lat},${lon}&zoom=18` : `https://maps.google.com/maps?q=${lat},${lon}`;
+  window.open(url, '_blank');
+}
+
+// ── PAGES NOTES & CONTRATS ────────────────────────────────
+function afficherNotes(){
+  const notes = actions.filter(a=>a.note);
+  const empty = document.getElementById('notesEmpty');
+  const list  = document.getElementById('notesList');
+  empty.style.display = notes.length ? 'none' : 'block';
+  list.innerHTML = notes.slice().reverse().map(a=>`
+    <div class="addr-card" style="border-left:3px solid var(--yellow)">
+      <div class="addr-info">
+        <div class="addr-name">${a.adresse}</div>
+        <div class="addr-sub">${a.commune} · ${a.heure}</div>
+        <div class="note-inline">${a.note}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function afficherContrats(){
+  const contrats = actions.filter(a=>a.action==='signe');
+  const empty = document.getElementById('contratsEmpty');
+  const list  = document.getElementById('contratsList');
+  empty.style.display = contrats.length ? 'none' : 'block';
+  list.innerHTML = contrats.slice().reverse().map(a=>`
+    <div class="addr-card" style="border-left:3px solid var(--green)">
+      <div style="font-size:1.5rem">🎉</div>
+      <div class="addr-info">
+        <div class="addr-name">${a.adresse}</div>
+        <div class="addr-sub">${a.commune} · ${a.heure}</div>
+        ${a.note?`<div class="note-inline">${a.note}</div>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── EXPORT ────────────────────────────────────────────────
+function exporterJournee(){
+  if(!actions.length){ toast('Aucune action à exporter'); return; }
+  const cols = ['vendeur','secteur','date','heure','action','adresse','commune','dept','locaux','lat','lon','note'];
+  let csv = cols.join(';') + '\n';
+  actions.forEach(a=>{
+    csv += cols.map(k=>{ const v=String(a[k]||'').replace(/"/g,'""'); return v.includes(';')?`"${v}"`:v; }).join(';') + '\n';
+  });
+  const date = new Date().toISOString().split('T')[0];
+  const url = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv'}));
+  Object.assign(document.createElement('a'),{href:url,download:`${vendeur.prenom}_${date}.csv`}).click();
+  URL.revokeObjectURL(url);
+  toast('📤 Export téléchargé !');
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>

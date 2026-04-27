@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AnnivFibre">
+<meta name="theme-color" content="#0d0d1a">
+<title>AnnivFibre v4 — Anniversaires Clients</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bricolage+Grotesque:wght@400;600;800&display=swap');
+
+:root {
+  --bg:#0d0d1a; --surface:#141428; --border:#1e1e3a;
+  --red:#ff4d6d; --orange:#ff9f0a; --green:#30d158;
+  --blue:#4ecdc4; --purple:#c77dff; --gold:#ffd60a;
+  --text:#f0f0ff; --muted:#5a5a8a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Bricolage Grotesque',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(255,77,109,0.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(78,205,196,0.06) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.container{max-width:900px;margin:0 auto;padding:20px;position:relative;z-index:1;}
+
+/* HEADER */
+header{padding:20px 0 16px;border-bottom:1px solid var(--border);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.logo{font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;}
+.logo .fire{color:var(--red);}
+.tagline{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);margin-top:3px;}
+.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+
+/* BOUTONS */
+.btn{padding:8px 16px;border-radius:8px;border:none;font-family:'Bricolage Grotesque',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+.btn-secondary:hover{color:var(--text);}
+.btn-export{background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.3);color:var(--blue);}
+.btn-ntfy{background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);color:var(--gold);font-size:0.72rem;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;transition:border-color 0.2s;}
+.stat.urgent{border-color:rgba(255,77,109,0.4);}
+.stat.warn{border-color:rgba(255,159,10,0.4);}
+.stat.ok{border-color:rgba(48,209,88,0.4);}
+.stat-val{font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:500;display:block;}
+.stat-val.red{color:var(--red);}
+.stat-val.orange{color:var(--orange);}
+.stat-val.green{color:var(--green);}
+.stat-val.blue{color:var(--blue);}
+.stat-val.gold{color:var(--gold);}
+.stat-label{font-size:0.6rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;}
+
+/* ALERTE DU JOUR */
+.alerte-jour{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.3);border-radius:12px;padding:14px 16px;margin-bottom:20px;display:none;}
+.alerte-titre{font-weight:700;color:var(--red);margin-bottom:8px;font-size:0.9rem;}
+.alerte-list{display:flex;flex-direction:column;gap:6px;}
+.alerte-item{font-size:0.78rem;color:var(--text);padding:6px 10px;background:rgba(255,77,109,0.08);border-radius:6px;}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:16px;background:var(--surface);}
+.upload-zone:hover{border-color:var(--red);background:rgba(255,77,109,0.04);}
+input[type=file]{display:none;}
+
+/* FORMAT BADGE */
+.format-badge{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:0.68rem;padding:4px 10px;border-radius:20px;margin-top:8px;}
+.format-daddi{background:rgba(78,205,196,0.15);color:var(--blue);border:1px solid rgba(78,205,196,0.3);}
+.format-anniv{background:rgba(255,77,109,0.15);color:var(--red);border:1px solid rgba(255,77,109,0.3);}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;}
+.tab-btn{padding:7px 16px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:'Bricolage Grotesque',sans-serif;font-size:0.8rem;cursor:pointer;transition:all 0.15s;}
+.tab-btn.active{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+
+/* FILTRES */
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+.ctrl-select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.78rem;outline:none;}
+
+/* SEARCH BAR AMÉLIORÉE */
+.search-wrap{flex:1;min-width:200px;position:relative;}
+.search-wrap .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.85rem;pointer-events:none;}
+.ctrl-search{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 32px 8px 32px;color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.78rem;outline:none;transition:border-color 0.2s;}
+.ctrl-search:focus{border-color:var(--red);}
+.search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem;display:none;padding:2px 4px;border-radius:4px;}
+.search-clear:hover{color:var(--text);}
+.search-clear.visible{display:block;}
+.search-hint{font-size:0.64rem;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace;}
+
+.count-info{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);margin-left:auto;}
+
+/* ADRESSE CARDS */
+.addr-list{display:flex;flex-direction:column;gap:8px;}
+.addr-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;transition:border-color 0.2s;}
+.addr-card.urgence-1{border-left:3px solid var(--red);}
+.addr-card.urgence-2{border-left:3px solid var(--orange);}
+.addr-card.urgence-3{border-left:3px solid var(--green);}
+.addr-card.has-note{border-top:1px solid rgba(255,214,10,0.3);}
+
+.addr-badge{font-family:'DM Mono',monospace;font-size:0.65rem;padding:3px 8px;border-radius:20px;white-space:nowrap;font-weight:500;flex-shrink:0;}
+.badge-rouge{background:rgba(255,77,109,0.15);color:var(--red);}
+.badge-orange{background:rgba(255,159,10,0.15);color:var(--orange);}
+.badge-vert{background:rgba(48,209,88,0.15);color:var(--green);}
+.badge-2ans{background:rgba(78,205,196,0.15);color:var(--blue);}
+
+.addr-info{flex:1;min-width:0;}
+.addr-name{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.addr-sub{font-size:0.68rem;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.addr-note{font-size:0.72rem;color:var(--gold);margin-top:4px;font-style:italic;}
+
+/* Highlight recherche */
+.hl{background:rgba(255,77,109,0.25);color:var(--text);border-radius:2px;padding:0 1px;}
+
+.addr-jours{font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:500;flex-shrink:0;padding:4px 8px;border-radius:6px;}
+.j-rouge{background:rgba(255,77,109,0.15);color:var(--red);}
+.j-orange{background:rgba(255,159,10,0.15);color:var(--orange);}
+.j-vert{background:rgba(48,209,88,0.15);color:var(--green);}
+
+.addr-actions{display:flex;gap:6px;flex-shrink:0;}
+.act-btn{padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;transition:all 0.15s;font-family:'Bricolage Grotesque',sans-serif;}
+.act-btn:active{transform:scale(0.95);}
+.act-btn.maps{color:var(--blue);border-color:rgba(78,205,196,0.3);}
+.act-btn.menu{color:var(--red);border-color:rgba(255,77,109,0.3);background:rgba(255,77,109,0.08);}
+
+/* ANALYTICS */
+.analytics{display:none;}
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+.chart-title{font-size:0.8rem;font-weight:700;margin-bottom:14px;color:var(--muted);}
+.chart-title span{color:var(--text);}
+.bar-chart{display:flex;flex-direction:column;gap:8px;}
+.bar-row{display:flex;align-items:center;gap:10px;}
+.bar-label{font-size:0.72rem;color:var(--muted);min-width:80px;font-family:'DM Mono',monospace;}
+.bar-track{flex:1;height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s ease;}
+.bar-val{font-size:0.7rem;font-family:'DM Mono',monospace;min-width:40px;text-align:right;}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+.kpi-val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:500;}
+.kpi-label{font-size:0.62rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;}
+
+/* NTFY CONFIG */
+.ntfy-wrap{background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:10px;padding:14px;margin-bottom:16px;}
+.ntfy-title{font-size:0.8rem;font-weight:700;color:var(--gold);margin-bottom:8px;}
+.ntfy-input{width:100%;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;margin-bottom:8px;}
+.ntfy-input:focus{border-color:var(--gold);}
+
+/* OVERLAY / MENU */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;display:none;}
+.overlay.on{display:block;}
+.action-menu{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 16px 32px;z-index:1000;transform:translateY(100%);transition:transform 0.3s ease;}
+.action-menu.on{transform:translateY(0);}
+.menu-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;}
+.menu-addr{font-size:0.82rem;font-weight:700;text-align:center;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.menu-sub{font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:16px;font-family:'DM Mono',monospace;}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.menu-btn{padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s;}
+.menu-btn:active{transform:scale(0.97);}
+.menu-btn.sign{border-color:rgba(48,209,88,0.4);color:var(--green);}
+.menu-btn.fait{border-color:rgba(78,205,196,0.4);color:var(--blue);}
+.menu-btn.refus{border-color:rgba(255,77,109,0.4);color:var(--red);}
+.note-wrap{margin-bottom:10px;}
+.note-textarea{width:100%;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.82rem;outline:none;resize:none;}
+.note-textarea:focus{border-color:var(--gold);}
+.menu-cancel{width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Bricolage Grotesque',sans-serif;font-size:0.85rem;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:10px;font-size:0.8rem;z-index:9999;opacity:0;transition:all 0.3s;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:flex;align-items:center;gap:8px;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-icon{font-size:3rem;margin-bottom:12px;}
+
+/* CARTE */
+#carteMap{height:520px;border-radius:12px;border:1px solid var(--border);overflow:hidden;}
+.carte-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+.carte-stat-bar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.carte-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-family:'DM Mono',monospace;font-size:0.72rem;}
+.leaflet-popup-content-wrapper{background:#141428!important;border:1px solid #1e1e3a!important;border-radius:10px!important;box-shadow:0 8px 32px rgba(0,0,0,0.5)!important;}
+.leaflet-popup-content{color:#f0f0ff!important;margin:10px 14px!important;font-family:'Bricolage Grotesque',sans-serif!important;}
+.leaflet-popup-tip{background:#141428!important;}
+.popup-title{font-weight:700;font-size:0.85rem;margin-bottom:4px;}
+.popup-sub{font-size:0.7rem;color:#5a5a8a;font-family:'DM Mono',monospace;margin-bottom:8px;}
+.popup-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:0.65rem;font-weight:600;margin-bottom:8px;}
+.popup-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.popup-btn{padding:5px 10px;border-radius:6px;border:none;font-size:0.72rem;cursor:pointer;font-family:'Bricolage Grotesque',sans-serif;font-weight:600;}
+.pb-del{background:rgba(255,77,109,0.2);color:#ff4d6d;border:1px solid rgba(255,77,109,0.4);}
+.pb-maps{background:rgba(78,205,196,0.15);color:#4ecdc4;border:1px solid rgba(78,205,196,0.3);}
+.pb-sign{background:rgba(48,209,88,0.15);color:#30d158;border:1px solid rgba(48,209,88,0.3);}
+.geocode-progress{background:rgba(78,205,196,0.08);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:12px;margin-bottom:12px;display:none;}
+.geocode-bar{background:#1e1e3a;border-radius:4px;height:6px;margin-top:8px;overflow:hidden;}
+.geocode-fill{height:100%;background:linear-gradient(90deg,#4ecdc4,#30d158);border-radius:4px;transition:width 0.3s;width:0%;}
+
+@media(max-width:600px){
+  .stats{grid-template-columns:repeat(3,1fr);}
+  .act-btn.maps{display:none;}
+  .kpi-row{grid-template-columns:1fr 1fr;}
+  .search-hint{display:none;}
+  #carteMap{height:380px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div>
+    <div class="logo">🎂 Anniv<span class="fire">Fibre</span> <span style="font-size:0.8rem;color:var(--muted);font-weight:400">v4</span></div>
+    <div class="tagline">Clients au plein tarif · 1 an & 2 ans · DADDI natif · Carte interactive</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ntfy" onclick="toggleNtfy()">🔔 Alertes iPhone</button>
+    <button class="btn btn-export" onclick="exporterCSV()">📄 Export</button>
+    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">＋ Import CSV</button>
+    <input type="file" id="fileInput" accept=".csv" onchange="lire(this.files[0])">
+  </div>
+</header>
+
+<!-- NTFY CONFIG -->
+<div class="ntfy-wrap" id="ntfyWrap" style="display:none">
+  <div class="ntfy-title">🔔 Alertes push iPhone via ntfy.sh</div>
+  <input class="ntfy-input" id="ntfyTopic" placeholder="Ton canal ntfy (ex: gaelfibre_alertes)" value="gaelfibre_alertes">
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn btn-ntfy" onclick="testerPush()">📱 Tester maintenant</button>
+    <button class="btn btn-secondary" style="font-size:0.72rem" onclick="envoyerRapportPush()">📊 Rapport anniversaires</button>
+    <button class="btn btn-secondary" style="font-size:0.72rem" onclick="toggleNtfy()">✕ Fermer</button>
+  </div>
+  <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;font-family:DM Mono,monospace">
+    App ntfy sur App Store → Subscribe → gaelfibre_alertes
+  </div>
+</div>
+
+<!-- ALERTE DU JOUR -->
+<div class="alerte-jour" id="alerteJour">
+  <div class="alerte-titre">🚨 Anniversaires urgents aujourd'hui</div>
+  <div class="alerte-list" id="alerteList"></div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat urgent"><span class="stat-val red" id="sUrgent">—</span><div class="stat-label">🔴 J+1→7</div></div>
+  <div class="stat warn"><span class="stat-val orange" id="sWarn">—</span><div class="stat-label">🟠 J+8→20</div></div>
+  <div class="stat ok"><span class="stat-val green" id="sOk">—</span><div class="stat-label">🟢 J+21→30</div></div>
+  <div class="stat"><span class="stat-val blue" id="s2ans">—</span><div class="stat-label">🔵 2 ans</div></div>
+  <div class="stat"><span class="stat-val gold" id="sSign">—</span><div class="stat-label">🎉 Signés</div></div>
+</div>
+
+<!-- UPLOAD -->
+<div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+  <div style="font-size:2rem;margin-bottom:8px">📂</div>
+  <div style="font-size:0.85rem;color:var(--muted)" id="uploadText">
+    <strong style="color:var(--text)">Importer CSV DADDI ou AnnivFibre</strong><br>
+    Glisse ou clique · Format automatique détecté
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('liste',this)">📋 Liste</button>
+  <button class="tab-btn" onclick="switchTab('carte',this)">🗺️ Carte</button>
+  <button class="tab-btn" onclick="switchTab('analytics',this)">📊 Analytics</button>
+  <button class="tab-btn" onclick="switchTab('circuit',this)">📍 Circuit</button>
+</div>
+
+<!-- TAB LISTE -->
+<div id="tabListe">
+  <div class="controls">
+    <select class="ctrl-select" id="filtreUrgence" onchange="afficher()">
+      <option value="">Toutes urgences</option>
+      <option value="1">🔴 Urgent J+1→7</option>
+      <option value="2">🟠 Moyen J+8→20</option>
+      <option value="3">🟢 OK J+21→30</option>
+    </select>
+    <select class="ctrl-select" id="filtreType" onchange="afficher()">
+      <option value="">1 an + 2 ans</option>
+      <option value="1an">🔴 1 an</option>
+      <option value="2ans">🔵 2 ans</option>
+    </select>
+    <select class="ctrl-select" id="filtreDept" onchange="afficher()">
+      <option value="">Tous depts</option>
+    </select>
+    <select class="ctrl-select" id="filtreSort" onchange="afficher()">
+      <option value="urgence">Par urgence</option>
+      <option value="nb">Par nb logements</option>
+      <option value="commune">Par commune</option>
+      <option value="dept">Par département</option>
+    </select>
+  </div>
+
+  <!-- SEARCH BAR AMÉLIORÉE -->
+  <div style="margin-bottom:12px">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="ctrl-search" id="searchAnniv" placeholder="Rechercher adresse, commune, dept (ex: 26, Valence...)" oninput="onSearch()">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="search-hint">Filtre sur : adresse · commune · code postal · numéro de département</div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+    <div class="count-info" id="countInfo">—</div>
+    <button class="btn btn-secondary" style="font-size:0.72rem" onclick="nettoyerExpires()">🗑️ Supprimer >30j</button>
+  </div>
+
+  <div class="addr-list" id="addrList">
+    <div class="empty"><div class="empty-icon">🎂</div>Importez le fichier CSV DADDI ou AnnivFibre</div>
+  </div>
+</div>
+
+<!-- TAB CARTE -->
+<div id="tabCarte" style="display:none">
+  <div class="geocode-progress" id="geocodeProgress">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:0.78rem;font-weight:600;color:var(--blue)">🌍 Géocodage en cours...</span>
+      <span id="geocodeCount" style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted)">0/0</span>
+    </div>
+    <div class="geocode-bar"><div class="geocode-fill" id="geocodeFill"></div></div>
+    <div id="geocodeStatus" style="font-size:0.68rem;color:var(--muted);margin-top:6px;font-family:'DM Mono',monospace"></div>
+  </div>
+
+  <div class="carte-controls">
+    <select class="ctrl-select" id="carteDept" onchange="filtrerCarte()">
+      <option value="">Tous départements</option>
+    </select>
+    <select class="ctrl-select" id="carteType" onchange="filtrerCarte()">
+      <option value="">1 an + 2 ans</option>
+      <option value="1an">🔴 1 an</option>
+      <option value="2ans">🔵 2 ans</option>
+    </select>
+    <select class="ctrl-select" id="carteUrgence" onchange="filtrerCarte()">
+      <option value="">Toutes urgences</option>
+      <option value="1">🔴 Urgent J+1→7</option>
+      <option value="2">🟠 Moyen J+8→20</option>
+      <option value="3">🟢 OK J+21→30</option>
+    </select>
+    <button class="btn btn-export" onclick="exporterCSVCarte()" style="font-size:0.75rem">📄 Export CSV visible</button>
+    <button class="btn btn-secondary" onclick="recentrerCarte()" style="font-size:0.75rem">🎯 Recentrer</button>
+  </div>
+
+  <div class="carte-stat-bar" id="carteStatBar"></div>
+
+  <div style="font-size:0.7rem;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace;">
+    💡 Clique sur un marqueur → supprimer / signer / ouvrir Maps
+  </div>
+
+  <div id="carteMap"></div>
+
+  <div style="margin-top:10px;font-size:0.68rem;color:var(--muted);font-family:'DM Mono',monospace;text-align:center;">
+    🗺️ OpenStreetMap · Géocodage Nominatim · Marqueurs cliquables
+  </div>
+</div>
+
+<!-- TAB ANALYTICS -->
+<div id="tabAnalytics" class="analytics">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-val" id="aTauxSign" style="color:var(--green)">—%</div><div class="kpi-label">Taux conversion anniv</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="aMeilleurMois" style="color:var(--gold)">—</div><div class="kpi-label">Meilleur mois</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="aMoyJours" style="color:var(--blue)">—j</div><div class="kpi-label">Délai moyen signature</div></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">📅 <span>Signatures par mois</span></div>
+    <div class="bar-chart" id="chartMois"></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">🏢 <span>Résultats par type</span></div>
+    <div class="bar-chart" id="chartType"></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">🗺️ <span>Top communes</span></div>
+    <div class="bar-chart" id="chartCommune"></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">📍 <span>Répartition par département</span></div>
+    <div class="bar-chart" id="chartDept"></div>
+  </div>
+</div>
+
+<!-- TAB CIRCUIT -->
+<div id="tabCircuit" style="display:none">
+  <div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="font-size:0.82rem;font-weight:700;color:var(--blue);margin-bottom:6px">🗺️ Anniversaires dans ton circuit du jour</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:10px">Sélectionne un secteur pour voir les anniversaires à proximité</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <select class="ctrl-select" id="circuitDept" onchange="filtrerCircuitDept()" style="flex:1;min-width:120px">
+        <option value="">Tous depts</option>
+      </select>
+      <select class="ctrl-select" id="circuitCommune" onchange="afficherCircuit()" style="flex:2;min-width:160px">
+        <option value="">Sélectionner une commune...</option>
+      </select>
+    </div>
+    <div class="addr-list" id="circuitList">
+      <div class="empty" style="padding:20px"><div class="empty-icon" style="font-size:2rem">🗺️</div>Sélectionnez une commune</div>
+    </div>
+    <button class="btn btn-export" onclick="exporterCircuit()" style="width:100%;margin-top:10px">📤 Exporter circuit anniversaires</button>
+  </div>
+  <div style="font-size:0.72rem;color:var(--muted);font-family:DM Mono,monospace;text-align:center">
+    💡 Inclure dans CircuitPro pour faire d'une pierre deux coups !
+  </div>
+</div>
+
+</div>
+
+<!-- OVERLAY + MENU -->
+<div class="overlay" id="overlay" onclick="fermerMenu()"></div>
+<div class="action-menu" id="actionMenu">
+  <div class="menu-handle"></div>
+  <div class="menu-addr" id="menuAddr">—</div>
+  <div class="menu-sub" id="menuSub">—</div>
+
+  <div class="note-wrap">
+    <textarea class="note-textarea" id="noteInput" rows="2" placeholder="📝 Note terrain (gardien, horaires, résultat...)"></textarea>
+    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+      <button onclick="tagNote('Gardien présent matin')" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer">🏠 Gardien matin</button>
+      <button onclick="tagNote('Interphone cassé')" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer">📵 Interphone cassé</button>
+      <button onclick="tagNote('Digicode requis')" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer">🔢 Digicode</button>
+      <button onclick="tagNote('Absent - repasser')" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer">👤 Absent</button>
+    </div>
+  </div>
+
+  <div class="menu-grid">
+    <button class="menu-btn sign" onclick="action('signé')">🎉 Contrat signé !</button>
+    <button class="menu-btn fait" onclick="action('fait')">✅ Déjà prospecté</button>
+    <button class="menu-btn refus" onclick="action('refus')">❌ Refus définitif</button>
+    <button class="menu-btn" onclick="sauvegarderNote()">💾 Sauvegarder note</button>
+  </div>
+  <button class="menu-cancel" onclick="fermerMenu()">Fermer</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let adresses = [];
+let menuIdx = null;
+let dernier = null;
+let tabActif = 'liste';
+let formatDetecte = '';
+
+const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+// ── URGENCE ──
+function getUrgence(jda){ if(jda<=7) return 1; if(jda<=20) return 2; return 3; }
+function getUrgenceClass(jda){ return ['','urgence-1','urgence-2','urgence-3'][getUrgence(jda)]; }
+function getBadgeClass(a,jda){ if(a.type==='2ans') return 'badge-2ans'; if(jda<=7) return 'badge-rouge'; if(jda<=20) return 'badge-orange'; return 'badge-vert'; }
+function getJoursClass(jda){ if(jda<=7) return 'j-rouge'; if(jda<=20) return 'j-orange'; return 'j-vert'; }
+
+// ── TABS ──
+function switchTab(tab,btn){
+  document.getElementById('tabListe').style.display='none';
+  document.getElementById('tabAnalytics').style.display='none';
+  document.getElementById('tabCircuit').style.display='none';
+  document.getElementById('tabCarte').style.display='none';
+  if(tab==='liste')    document.getElementById('tabListe').style.display='block';
+  if(tab==='analytics'){document.getElementById('tabAnalytics').style.display='block';renderAnalytics();}
+  if(tab==='circuit') {document.getElementById('tabCircuit').style.display='block';remplirCircuitSelect();}
+  if(tab==='carte')   {document.getElementById('tabCarte').style.display='block';initCarte();}
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  tabActif=tab;
+}
+
+// ── UPLOAD ──
+document.getElementById('uploadZone').addEventListener('dragover',e=>e.preventDefault());
+document.getElementById('uploadZone').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])lire(e.dataTransfer.files[0]);});
+
+// ══════════════════════════════════════════════
+// PARSING — détection automatique format DADDI ou AnnivFibre
+// ══════════════════════════════════════════════
+function lire(file){
+  if(!file) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const raw=e.target.result;
+    const lines=raw.split('\n').filter(l=>l.trim());
+    if(lines.length<2){toast('❌ Fichier invalide');return;}
+    const sep=lines[0].includes(';')?';':',';
+    const headers=lines[0].split(sep).map(v=>v.trim().replace(/"/g,'').toLowerCase());
+
+    // Détection format
+    const isDADDI = headers.some(h=>h==='type_anniv'||h==='jours_depuis_anniv'||h==='codepostal'||h==='nomvoie');
+    formatDetecte = isDADDI ? 'DADDI' : 'AnnivFibre';
+
+    let parsed = [];
+    if(isDADDI){
+      parsed = parseDADDI(lines, sep, headers);
+    } else {
+      parsed = parseAnnivFibre(lines, sep, headers);
+    }
+
+    adresses = parsed;
+
+    // Alimenter les selects département
+    const depts=[...new Set(adresses.map(a=>a.dept).filter(Boolean))].sort();
+    const sel=document.getElementById('filtreDept');
+    sel.innerHTML='<option value="">Tous depts</option>';
+    depts.forEach(d=>{
+      const o=document.createElement('option');
+      o.value=d;
+      o.textContent=`Dept ${d}`;
+      sel.appendChild(o);
+    });
+
+    // Badge format
+    const badgeHtml=`<span class="format-badge format-${isDADDI?'daddi':'anniv'}">${isDADDI?'⚡ Format DADDI détecté':'📋 Format AnnivFibre'}</span>`;
+    document.getElementById('uploadText').innerHTML=
+      `<strong>${file.name}</strong> — ${adresses.length} adresses · ${formatDetecte}<br>${badgeHtml}`;
+
+    majStats();
+    afficher();
+    afficherAlerteJour();
+    // Réinitialiser la carte pour le nouvel import
+    if(carteMap){ carteMap.remove(); carteMap=null; carteLayerGroup=null; }
+    geocodeCache={}; geocodeEnCours=false;
+    if(tabActif==='carte') initCarte();
+    toast(`✅ ${adresses.length} adresses chargées (${formatDetecte})`);
+  };
+  r.readAsText(file,'utf-8');
+}
+
+// ── Parser CSV DADDI (export bookmarklet) ──
+function parseDADDI(lines, sep, headers){
+  const fi={
+    type_anniv:   headers.findIndex(h=>h==='type_anniv'),
+    jda:          headers.findIndex(h=>h==='jours_depuis_anniv'),
+    nb:           headers.findIndex(h=>h==='nombrelogements'||h==='nb'||h.includes('logement')),
+    dept:         headers.findIndex(h=>h==='dept'),
+    num:          headers.findIndex(h=>h==='numerovoie'||h==='numero'),
+    compl:        headers.findIndex(h=>h==='complnumerovoie'||h==='compl'),
+    nomVoie:      headers.findIndex(h=>h==='nomvoie'),
+    cp:           headers.findIndex(h=>h==='codepostal'||h==='code_postal'),
+    commune:      headers.findIndex(h=>h==='commune'),
+    mesc:         headers.findIndex(h=>h==='mescdate'||h==='mesc_date'||h==='mesc'),
+    typeLogement: headers.findIndex(h=>h==='typelogement'||h==='type_logement'),
+    scoring:      headers.findIndex(h=>h==='scoring'),
+    id:           headers.findIndex(h=>h==='id'),
+  };
+
+  const result=[];
+  for(let i=1;i<lines.length;i++){
+    const c=splitCSV(lines[i],sep);
+    const type_anniv=(fi.type_anniv>=0?c[fi.type_anniv]:'').toLowerCase().replace(/\s/g,'');
+    const jda=parseInt(fi.jda>=0?c[fi.jda]:0)||0;
+    const nb=parseInt(fi.nb>=0?c[fi.nb]:0)||0;
+    const cp=fi.cp>=0?c[fi.cp]:'';
+    const dept=fi.dept>=0&&c[fi.dept]?c[fi.dept]:cp.substring(0,2);
+    const commune=fi.commune>=0?c[fi.commune]:'';
+    const mesc=fi.mesc>=0?c[fi.mesc]:'';
+    const typeLogement=fi.typeLogement>=0?c[fi.typeLogement]:'';
+    const isImmeuble=typeLogement.toUpperCase().includes('IMMEUBLE');
+
+    // Construire adresse lisible
+    const num=fi.num>=0?c[fi.num]:'';
+    const compl=fi.compl>=0?c[fi.compl]:'';
+    const nomVoie=fi.nomVoie>=0?c[fi.nomVoie]:'';
+    let adresse=[num,compl,nomVoie].filter(Boolean).join(' ').trim();
+    if(!adresse) adresse=`${cp} ${commune}`.trim();
+
+    // Normaliser type
+    let type='';
+    if(type_anniv==='1an'||type_anniv==='1'||type_anniv.includes('1an')) type='1an';
+    else if(type_anniv==='2ans'||type_anniv==='2'||type_anniv.includes('2ans')) type='2ans';
+    else continue;
+
+    if(jda<1||jda>30) continue;
+    // Filtre nb logements : seulement pour les immeubles (pavillons toujours inclus)
+    if(isImmeuble && nb<9) continue;
+
+    result.push({
+      adresse, commune, dept, nb,
+      typeLogement,
+      mesc: formatMesc(mesc),
+      anniv:'', jours:0,
+      jours_depuis_anniv:jda,
+      type, supprime:false, note:'', action:'', dateAction:''
+    });
+  }
+  return result;
+}
+
+// ── Parser CSV AnnivFibre (export interne) ──
+function parseAnnivFibre(lines, sep, headers){
+  const fi={
+    adresse: headers.findIndex(v=>v==='adresse'),
+    commune: headers.findIndex(v=>v.includes('commune')),
+    dept:    headers.findIndex(v=>v==='dpt'||v==='dept'),
+    nb:      headers.findIndex(v=>v==='nb'||v.includes('logement')),
+    mesc:    headers.findIndex(v=>v.includes('mesc')||v.includes('date_mesc')),
+    anniv:   headers.findIndex(v=>v.includes('prochaine_anniv')||v.includes('anniv')),
+    jours:   headers.findIndex(v=>v==='jours_anniv'||v.includes('jours_depuis')),
+    annees:  headers.findIndex(v=>v==='annees'),
+    type:    headers.findIndex(v=>v==='type'),
+    note:    headers.findIndex(v=>v==='note'),
+    action:  headers.findIndex(v=>v==='action'),
+  };
+
+  const result=[];
+  for(let i=1;i<lines.length;i++){
+    const c=splitCSV(lines[i],sep);
+    const nb=parseInt(c[fi.nb]||0)||0;
+    if(nb<9) continue;
+
+    // Support type direct ou calcul depuis annees+jours
+    let type='', jda=0;
+    if(fi.type>=0&&c[fi.type]){
+      type=c[fi.type];
+      jda=parseInt(fi.jours>=0?c[fi.jours]:0)||0;
+    } else {
+      const jours_anniv=parseInt(fi.jours>=0?c[fi.jours]:0)||0;
+      const annees=parseInt(fi.annees>=0?c[fi.annees]:0)||0;
+      if(annees===1&&jours_anniv>=335) type='1an';
+      else if(annees===2&&jours_anniv>=335) type='2ans';
+      else continue;
+      jda=365-jours_anniv;
+    }
+
+    if(jda>30||jda<1) continue;
+
+    result.push({
+      adresse:  c[fi.adresse]||'',
+      commune:  c[fi.commune]||'',
+      dept:     c[fi.dept]||'',
+      nb,
+      mesc:     formatMesc(c[fi.mesc]||''),
+      anniv:    fi.anniv>=0?c[fi.anniv]:'',
+      jours:    0,
+      jours_depuis_anniv: jda,
+      type, supprime:false,
+      note:     fi.note>=0?c[fi.note]:'',
+      action:   fi.action>=0?c[fi.action]:'',
+      dateAction:''
+    });
+  }
+  return result;
+}
+
+// Découpage CSV robuste (gère les guillemets)
+function splitCSV(line, sep){
+  const result=[];
+  let cur='', inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){inQ=!inQ;}
+    else if(ch===sep&&!inQ){result.push(cur.trim());cur='';}
+    else{cur+=ch;}
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function formatMesc(v){
+  if(!v) return '';
+  // YYYY-MM-DD → DD/MM/YYYY
+  if(/^\d{4}-\d{2}-\d{2}/.test(v)){
+    const [y,m,d]=v.split('-');
+    return `${d}/${m}/${y}`;
+  }
+  return v;
+}
+
+// ── ALERTE DU JOUR ──
+function afficherAlerteJour(){
+  const urgents=adresses.filter(a=>!a.supprime&&a.jours_depuis_anniv<=7);
+  const el=document.getElementById('alerteJour');
+  if(!urgents.length){el.style.display='none';return;}
+  el.style.display='block';
+  document.getElementById('alerteList').innerHTML=urgents.slice(0,5).map(a=>
+    `<div class="alerte-item">🔴 J+${a.jours_depuis_anniv} — ${a.adresse} — ${a.commune} (${a.dept}) — ${a.nb} log</div>`
+  ).join('')+(urgents.length>5?`<div class="alerte-item" style="color:var(--muted)">... et ${urgents.length-5} autres</div>`:'');
+}
+
+// ── STATS ──
+function majStats(){
+  const actifs=adresses.filter(a=>!a.supprime);
+  document.getElementById('sUrgent').textContent=actifs.filter(a=>a.jours_depuis_anniv<=7).length;
+  document.getElementById('sWarn').textContent=actifs.filter(a=>a.jours_depuis_anniv>7&&a.jours_depuis_anniv<=20).length;
+  document.getElementById('sOk').textContent=actifs.filter(a=>a.jours_depuis_anniv>20).length;
+  document.getElementById('s2ans').textContent=actifs.filter(a=>a.type==='2ans').length;
+  document.getElementById('sSign').textContent=adresses.filter(a=>a.action==='signé').length;
+}
+
+// ── SEARCH ──
+function onSearch(){
+  const val=document.getElementById('searchAnniv').value;
+  document.getElementById('searchClear').classList.toggle('visible',val.length>0);
+  afficher();
+}
+function clearSearch(){
+  document.getElementById('searchAnniv').value='';
+  document.getElementById('searchClear').classList.remove('visible');
+  afficher();
+}
+
+// Mise en évidence du terme recherché
+function highlight(text, term){
+  if(!term||!text) return escHtml(text||'');
+  const idx=text.toLowerCase().indexOf(term.toLowerCase());
+  if(idx<0) return escHtml(text);
+  return escHtml(text.substring(0,idx))+'<span class="hl">'+escHtml(text.substring(idx,idx+term.length))+'</span>'+escHtml(text.substring(idx+term.length));
+}
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── AFFICHAGE ──
+function afficher(){
+  const urgence = document.getElementById('filtreUrgence').value;
+  const type    = document.getElementById('filtreType').value;
+  const dept    = document.getElementById('filtreDept').value;
+  const sort    = document.getElementById('filtreSort').value;
+  const search  = document.getElementById('searchAnniv').value.trim();
+  const searchL = search.toLowerCase();
+
+  let actifs=adresses.filter(a=>!a.supprime);
+  if(urgence) actifs=actifs.filter(a=>getUrgence(a.jours_depuis_anniv)===parseInt(urgence));
+  if(type)    actifs=actifs.filter(a=>a.type===type);
+  if(dept)    actifs=actifs.filter(a=>a.dept===dept);
+
+  // Recherche étendue : adresse, commune, dept, code postal
+  if(searchL){
+    actifs=actifs.filter(a=>
+      a.adresse.toLowerCase().includes(searchL)||
+      a.commune.toLowerCase().includes(searchL)||
+      a.dept.toLowerCase().includes(searchL)||
+      (a.mesc&&a.mesc.includes(searchL))
+    );
+  }
+
+  if(sort==='urgence') actifs.sort((a,b)=>a.jours_depuis_anniv-b.jours_depuis_anniv);
+  if(sort==='nb')      actifs.sort((a,b)=>b.nb-a.nb);
+  if(sort==='commune') actifs.sort((a,b)=>a.commune.localeCompare(b.commune));
+  if(sort==='dept')    actifs.sort((a,b)=>a.dept.localeCompare(b.dept)||a.jours_depuis_anniv-b.jours_depuis_anniv);
+
+  document.getElementById('countInfo').textContent=`${actifs.length} adresse${actifs.length>1?'s':''}${search?' pour "'+search+'"':''}`;
+
+  const list=document.getElementById('addrList');
+  if(!actifs.length){
+    list.innerHTML=`<div class="empty"><div class="empty-icon">${search?'🔍':'✨'}</div>${search?`Aucun résultat pour "${search}"<br><button class="btn btn-secondary" onclick="clearSearch()" style="margin-top:12px;font-size:0.75rem">Effacer la recherche</button>`:'Aucune adresse correspondante'}</div>`;
+    return;
+  }
+
+  list.innerHTML='';
+  actifs.forEach(a=>{
+    const idx=adresses.indexOf(a);
+    const jda=a.jours_depuis_anniv;
+    const badgeLabel=a.type==='2ans'?`🔵 2 ans J+${jda}`:jda<=7?`🔴 URGENT J+${jda}`:jda<=20?`🟠 J+${jda}`:`🟢 J+${jda}`;
+    const adresseHL=highlight(a.adresse,search);
+    const communeHL=highlight(a.commune,search);
+    const deptHL=highlight(a.dept,search);
+    const div=document.createElement('div');
+    div.className=`addr-card ${getUrgenceClass(jda)}${a.note?' has-note':''}`;
+    div.innerHTML=`
+      <span class="addr-badge ${getBadgeClass(a,jda)}">${badgeLabel}</span>
+      <div class="addr-info">
+        <div class="addr-name">${adresseHL}</div>
+        <div class="addr-sub">${communeHL} (<span style="font-weight:600;color:var(--text)">${deptHL}</span>) · ${a.nb} log${a.typeLogement?' · '+a.typeLogement:''} · MESC ${a.mesc||'—'}</div>
+        ${a.note?`<div class="addr-note">📝 ${escHtml(a.note)}</div>`:''}
+      </div>
+      <span class="addr-jours ${getJoursClass(jda)}">J+${jda}</span>
+      <div class="addr-actions">
+        <button class="act-btn maps" onclick="ouvrirMaps(event,${idx})">Maps</button>
+        <button class="act-btn menu" onclick="ouvrirMenu(${idx})">⋯</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ── MENU ──
+function ouvrirMenu(idx){
+  menuIdx=idx;
+  const a=adresses[idx];
+  document.getElementById('menuAddr').textContent=a.adresse.substring(0,50);
+  document.getElementById('menuSub').textContent=`${a.commune} (${a.dept}) · ${a.nb} log · J+${a.jours_depuis_anniv}`;
+  document.getElementById('noteInput').value=a.note||'';
+  document.getElementById('actionMenu').classList.add('on');
+  document.getElementById('overlay').classList.add('on');
+}
+function fermerMenu(){
+  document.getElementById('actionMenu').classList.remove('on');
+  document.getElementById('overlay').classList.remove('on');
+  menuIdx=null;
+}
+function tagNote(tag){ const inp=document.getElementById('noteInput'); inp.value=(inp.value?inp.value+' · ':'')+tag; }
+function sauvegarderNote(){
+  if(menuIdx===null) return;
+  adresses[menuIdx].note=document.getElementById('noteInput').value.trim();
+  fermerMenu(); afficher(); toast('💾 Note sauvegardée !');
+}
+function action(type){
+  if(menuIdx===null) return;
+  const note=document.getElementById('noteInput').value.trim();
+  if(note) adresses[menuIdx].note=note;
+  adresses[menuIdx].action=type;
+  adresses[menuIdx].dateAction=new Date().toLocaleDateString('fr');
+  if(type!=='note') adresses[menuIdx].supprime=true;
+  fermerMenu(); majStats(); afficher();
+  const labels={signé:'🎉 Contrat signé !',fait:'✅ Prospecté',refus:'❌ Refus'};
+  toast(labels[type]||'✅ Action enregistrée');
+}
+
+// ── MAPS ──
+function ouvrirMaps(e,idx){
+  e.stopPropagation();
+  const a=adresses[idx];
+  const query=`${a.adresse}, ${a.commune}`;
+  const isIOS=/iPhone|iPad/.test(navigator.userAgent);
+  window.open(isIOS?`maps://maps.apple.com/?q=${encodeURIComponent(query)}`:`https://maps.google.com/maps?q=${encodeURIComponent(query)}`,'_blank');
+}
+
+// ── NETTOYAGE ──
+function nettoyerExpires(){
+  let count=0;
+  adresses.forEach(a=>{if(!a.supprime&&a.jours_depuis_anniv>30){a.supprime=true;count++;}});
+  majStats(); afficher(); toast(`🗑️ ${count} expirées supprimées`);
+}
+
+// ── ANALYTICS ──
+function renderAnalytics(){
+  const signes=adresses.filter(a=>a.action==='signé');
+  const total=adresses.length;
+  document.getElementById('aTauxSign').textContent=total>0?(signes.length/total*100).toFixed(1)+'%':'0%';
+  const parMois={};
+  signes.forEach(a=>{if(!a.dateAction)return;const parts=a.dateAction.split('/');if(parts.length<2)return;const m=parseInt(parts[1])-1;parMois[m]=(parMois[m]||0)+1;});
+  const meilleur=Object.entries(parMois).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('aMeilleurMois').textContent=meilleur?MOIS[parseInt(meilleur[0])]:'—';
+  const delais=signes.filter(a=>a.jours_depuis_anniv).map(a=>a.jours_depuis_anniv);
+  document.getElementById('aMoyJours').textContent=(delais.length?Math.round(delais.reduce((a,b)=>a+b,0)/delais.length):0)+'j';
+  const maxM=Math.max(...Object.values(parMois),1);
+  document.getElementById('chartMois').innerHTML=MOIS.map((m,i)=>{const v=parMois[i]||0;return`<div class="bar-row"><div class="bar-label">${m}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxM*100}%;background:var(--green)"></div></div><div class="bar-val" style="color:var(--green)">${v}</div></div>`;}).join('');
+  const t1=adresses.filter(a=>a.type==='1an'),t2=adresses.filter(a=>a.type==='2ans');
+  const s1=t1.filter(a=>a.action==='signé').length,s2=t2.filter(a=>a.action==='signé').length;
+  document.getElementById('chartType').innerHTML=`
+    <div class="bar-row"><div class="bar-label">1 an</div><div class="bar-track"><div class="bar-fill" style="width:${t1.length?s1/t1.length*100:0}%;background:var(--red)"></div></div><div class="bar-val" style="color:var(--red)">${t1.length?((s1/t1.length)*100).toFixed(0):0}%</div></div>
+    <div class="bar-row"><div class="bar-label">2 ans</div><div class="bar-track"><div class="bar-fill" style="width:${t2.length?s2/t2.length*100:0}%;background:var(--blue)"></div></div><div class="bar-val" style="color:var(--blue)">${t2.length?((s2/t2.length)*100).toFixed(0):0}%</div></div>
+  `;
+  const parCommune={};
+  adresses.forEach(a=>{if(!parCommune[a.commune])parCommune[a.commune]={total:0,signes:0};parCommune[a.commune].total++;if(a.action==='signé')parCommune[a.commune].signes++;});
+  const topC=Object.entries(parCommune).filter(([,v])=>v.total>=2).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+  const maxC=Math.max(...topC.map(([,v])=>v.total),1);
+  document.getElementById('chartCommune').innerHTML=topC.map(([c,v])=>`<div class="bar-row"><div class="bar-label" style="font-size:0.65rem">${c.substring(0,12)}</div><div class="bar-track"><div class="bar-fill" style="width:${v.total/maxC*100}%;background:var(--purple)"></div></div><div class="bar-val" style="color:var(--purple)">${v.total}</div></div>`).join('');
+  // Dept chart
+  const parDept={};
+  adresses.filter(a=>!a.supprime).forEach(a=>{if(!parDept[a.dept])parDept[a.dept]={total:0};parDept[a.dept].total++;});
+  const topD=Object.entries(parDept).sort((a,b)=>b[1].total-a[1].total);
+  const maxD=Math.max(...topD.map(([,v])=>v.total),1);
+  document.getElementById('chartDept').innerHTML=topD.map(([d,v])=>`<div class="bar-row"><div class="bar-label">Dept ${d}</div><div class="bar-track"><div class="bar-fill" style="width:${v.total/maxD*100}%;background:var(--orange)"></div></div><div class="bar-val" style="color:var(--orange)">${v.total}</div></div>`).join('');
+}
+
+// ── CIRCUIT ──
+function remplirCircuitSelect(){
+  const depts=[...new Set(adresses.filter(a=>!a.supprime).map(a=>a.dept))].sort();
+  const selD=document.getElementById('circuitDept');
+  selD.innerHTML='<option value="">Tous depts</option>';
+  depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=`Dept ${d}`;selD.appendChild(o);});
+  filtrerCircuitDept();
+}
+function filtrerCircuitDept(){
+  const dept=document.getElementById('circuitDept').value;
+  const communes=[...new Set(adresses.filter(a=>!a.supprime&&(!dept||a.dept===dept)).map(a=>a.commune))].sort();
+  const sel=document.getElementById('circuitCommune');
+  sel.innerHTML='<option value="">Sélectionner une commune...</option>';
+  communes.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+  document.getElementById('circuitList').innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon" style="font-size:2rem">🗺️</div>Sélectionnez une commune</div>';
+}
+function afficherCircuit(){
+  const commune=document.getElementById('circuitCommune').value;
+  const list=document.getElementById('circuitList');
+  if(!commune){list.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon" style="font-size:2rem">🗺️</div>Sélectionnez une commune</div>';return;}
+  const actifs=adresses.filter(a=>!a.supprime&&a.commune===commune);
+  if(!actifs.length){list.innerHTML='<div class="empty" style="padding:20px">Aucun anniversaire dans cette commune</div>';return;}
+  list.innerHTML='';
+  actifs.forEach(a=>{
+    const idx=adresses.indexOf(a);
+    const div=document.createElement('div');
+    div.className=`addr-card ${getUrgenceClass(a.jours_depuis_anniv)}`;
+    div.style.marginBottom='6px';
+    div.innerHTML=`
+      <span class="addr-badge ${getBadgeClass(a,a.jours_depuis_anniv)}">${a.type==='2ans'?'🔵 2ans':'🔴 1an'} J+${a.jours_depuis_anniv}</span>
+      <div class="addr-info"><div class="addr-name">${escHtml(a.adresse)}</div><div class="addr-sub">${a.nb} log · MESC ${a.mesc||'—'}</div></div>
+      <button class="act-btn maps" onclick="ouvrirMaps(event,${idx})">Maps</button>
+    `;
+    list.appendChild(div);
+  });
+}
+function exporterCircuit(){
+  const commune=document.getElementById('circuitCommune').value;
+  const actifs=adresses.filter(a=>!a.supprime&&(!commune||a.commune===commune));
+  if(!actifs.length){toast('Aucune adresse à exporter');return;}
+  let csv='type;adresse;commune;dept;nb;mesc;jours_depuis_anniv\n';
+  actifs.forEach(a=>{csv+=`${a.type};${a.adresse};${a.commune};${a.dept};${a.nb};${a.mesc};${a.jours_depuis_anniv}\n`;});
+  dl('\uFEFF'+csv,'circuit_anniversaires.csv');
+  toast('📤 Export circuit anniversaires !');
+}
+
+// ── NTFY ──
+function toggleNtfy(){ const w=document.getElementById('ntfyWrap'); w.style.display=w.style.display==='none'?'block':'none'; }
+async function envoyerPush(titre,message){
+  const topic=document.getElementById('ntfyTopic').value||'gaelfibre_alertes';
+  try{await fetch(`https://ntfy.sh/${topic}`,{method:'POST',body:message,headers:{'Title':titre,'Priority':'high','Tags':'birthday,fire','Content-Type':'text/plain; charset=utf-8'}});return true;}catch(e){return false;}
+}
+async function testerPush(){ const ok=await envoyerPush('Test AnnivFibre','Systeme anniversaires operationnel !'); toast(ok?'📱 Push envoyé ! Vérifie ton iPhone':'❌ Erreur push — vérifie ntfy.sh'); }
+async function envoyerRapportPush(){
+  const urgents=adresses.filter(a=>!a.supprime&&a.jours_depuis_anniv<=7);
+  const semaine=adresses.filter(a=>!a.supprime&&a.jours_depuis_anniv<=14);
+  if(!semaine.length){toast('Aucun anniversaire cette semaine');return;}
+  const msg=`Urgents J+1-7: ${urgents.length}\nSemaine J+8-14: ${semaine.length-urgents.length}\n\nTop urgents:\n`+urgents.slice(0,3).map(a=>`• J+${a.jours_depuis_anniv} ${a.commune} ${a.nb}log`).join('\n');
+  const ok=await envoyerPush(`${urgents.length} anniversaires urgents !`,msg);
+  toast(ok?'📊 Rapport envoyé sur iPhone !':'❌ Erreur push');
+}
+
+// ── EXPORT ──
+function exporterCSV(){
+  const actifs=adresses.filter(a=>!a.supprime);
+  let csv='type;adresse;commune;dept;nb;mesc;jours_depuis_anniv;note;action\n';
+  actifs.forEach(a=>{csv+=`${a.type};${a.adresse};${a.commune};${a.dept};${a.nb};${a.mesc};${a.jours_depuis_anniv};${a.note||''};${a.action||''}\n`;});
+  dl('\uFEFF'+csv,'anniversaires_actifs.csv');
+  toast('📄 Export CSV téléchargé !');
+}
+function dl(content, filename){
+  const url=URL.createObjectURL(new Blob([content],{type:'text/csv'}));
+  Object.assign(document.createElement('a'),{href:url,download:filename}).click();
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════════
+// CARTE INTERACTIVE — Leaflet + Nominatim
+// ══════════════════════════════════════════════
+let carteMap = null;
+let carteMarkers = [];
+let carteLayerGroup = null;
+let geocodeCache = {}; // {adresse+commune+dept → {lat,lon}}
+let carteInitialisee = false;
+let geocodeEnCours = false;
+
+// Couleurs marqueurs selon urgence/type
+function markerColor(a){
+  if(a.type==='2ans') return '#4ecdc4';
+  if(a.jours_depuis_anniv<=7)  return '#ff4d6d';
+  if(a.jours_depuis_anniv<=20) return '#ff9f0a';
+  return '#30d158';
+}
+
+function markerIcon(a){
+  const color=markerColor(a);
+  const jda=a.jours_depuis_anniv;
+  const label=a.type==='2ans'?'2A':jda<=9?'J'+jda:'J'+jda;
+  return L.divIcon({
+    className:'',
+    html:`<div style="
+      background:${color};
+      color:#fff;
+      border-radius:50% 50% 50% 0;
+      transform:rotate(-45deg);
+      width:32px;height:32px;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 2px 8px rgba(0,0,0,0.4);
+      border:2px solid rgba(255,255,255,0.3);
+    "><span style="transform:rotate(45deg);font-size:0.55rem;font-weight:700;font-family:DM Mono,monospace;white-space:nowrap">${label}</span></div>`,
+    iconSize:[32,32],
+    iconAnchor:[16,32],
+    popupAnchor:[0,-34]
+  });
+}
+
+async function geocoderAdresse(a){
+  const cle=`${a.adresse}|${a.commune}|${a.dept}`;
+  if(geocodeCache[cle]) return geocodeCache[cle];
+  if(a.lat&&a.lon){ geocodeCache[cle]={lat:a.lat,lon:a.lon}; return geocodeCache[cle]; }
+
+  // Construire query Nominatim
+  const query=encodeURIComponent(`${a.adresse}, ${a.commune}, France`);
+  try{
+    const resp=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&countrycodes=fr`,{
+      headers:{'Accept-Language':'fr','User-Agent':'AnnivFibre/4.0'}
+    });
+    const data=await resp.json();
+    if(data&&data.length>0){
+      const r={lat:parseFloat(data[0].lat),lon:parseFloat(data[0].lon)};
+      geocodeCache[cle]=r;
+      a.lat=r.lat; a.lon=r.lon;
+      return r;
+    }
+    // Fallback : géocoder juste la commune
+    const q2=encodeURIComponent(`${a.commune} ${a.dept}, France`);
+    const r2=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${q2}&limit=1&countrycodes=fr`,{headers:{'Accept-Language':'fr','User-Agent':'AnnivFibre/4.0'}});
+    const d2=await r2.json();
+    if(d2&&d2.length>0){
+      const r={lat:parseFloat(d2[0].lat),lon:parseFloat(d2[0].lon)};
+      geocodeCache[cle]=r;
+      a.lat=r.lat; a.lon=r.lon;
+      return r;
+    }
+  }catch(e){}
+  return null;
+}
+
+// Centres par dept pour zoom initial
+const DEPT_CENTERS={
+  '26':{lat:44.73,lon:4.98},'07':{lat:44.74,lon:4.39},'38':{lat:45.19,lon:5.72},
+  '42':{lat:45.46,lon:4.39},'01':{lat:46.0,lon:5.35},'84':{lat:44.05,lon:5.05},
+  '30':{lat:44.02,lon:4.35},'43':{lat:45.04,lon:3.88},'73':{lat:45.45,lon:6.35},
+  '74':{lat:45.9,lon:6.12},'05':{lat:44.56,lon:6.08},'69':{lat:45.75,lon:4.85},
+};
+
+async function initCarte(){
+  // Alimenter select dept carte
+  const depts=[...new Set(adresses.filter(a=>!a.supprime).map(a=>a.dept))].sort();
+  const selD=document.getElementById('carteDept');
+  const valActuel=selD.value;
+  selD.innerHTML='<option value="">Tous départements</option>';
+  depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=`Dept ${d}`;selD.appendChild(o);});
+  if(valActuel) selD.value=valActuel;
+
+  // Initialiser la carte Leaflet une seule fois
+  if(!carteMap){
+    carteMap=L.map('carteMap',{zoomControl:true}).setView([44.93,4.89],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© OpenStreetMap',maxZoom:19
+    }).addTo(carteMap);
+    carteLayerGroup=L.layerGroup().addTo(carteMap);
+  }
+
+  if(!geocodeEnCours) await lancerGeocodeEtAfficher();
+}
+
+async function lancerGeocodeEtAfficher(){
+  const actifs=adresses.filter(a=>!a.supprime&&(!a.lat||!a.lon));
+  if(actifs.length===0){ filtrerCarte(); return; }
+
+  geocodeEnCours=true;
+  const prog=document.getElementById('geocodeProgress');
+  prog.style.display='block';
+  let done=0;
+  const total=Math.min(actifs.length,300); // max 300 pour ne pas saturer Nominatim
+
+  for(let i=0;i<total;i++){
+    if(actifs[i].supprime) continue;
+    document.getElementById('geocodeCount').textContent=`${done}/${total}`;
+    document.getElementById('geocodeFill').style.width=`${done/total*100}%`;
+    document.getElementById('geocodeStatus').textContent=`${actifs[i].commune} — ${actifs[i].adresse.substring(0,40)}`;
+    await geocoderAdresse(actifs[i]);
+    done++;
+    // Pause Nominatim : 1 requête/seconde max
+    await new Promise(r=>setTimeout(r,1100));
+  }
+
+  document.getElementById('geocodeCount').textContent=`${done}/${total} ✅`;
+  document.getElementById('geocodeFill').style.width='100%';
+  setTimeout(()=>{ prog.style.display='none'; },2000);
+  geocodeEnCours=false;
+  filtrerCarte();
+}
+
+function filtrerCarte(){
+  if(!carteMap) return;
+  const dept=document.getElementById('carteDept').value;
+  const type=document.getElementById('carteType').value;
+  const urg=document.getElementById('carteUrgence').value;
+
+  carteLayerGroup.clearLayers();
+  carteMarkers=[];
+
+  let actifs=adresses.filter(a=>!a.supprime&&a.lat&&a.lon);
+  if(dept)  actifs=actifs.filter(a=>a.dept===dept);
+  if(type)  actifs=actifs.filter(a=>a.type===type);
+  if(urg)   actifs=actifs.filter(a=>getUrgence(a.jours_depuis_anniv)===parseInt(urg));
+
+  // Stats barre
+  const statsEl=document.getElementById('carteStatBar');
+  const nb1=actifs.filter(a=>a.type==='1an').length;
+  const nb2=actifs.filter(a=>a.type==='2ans').length;
+  const nbU=actifs.filter(a=>a.jours_depuis_anniv<=7).length;
+  statsEl.innerHTML=`
+    <div class="carte-stat" style="color:var(--red)">🔴 ${nb1} × 1an</div>
+    <div class="carte-stat" style="color:var(--blue)">🔵 ${nb2} × 2ans</div>
+    <div class="carte-stat" style="color:var(--red)">⚡ ${nbU} urgents</div>
+    <div class="carte-stat" style="color:var(--muted)">${actifs.length} sur carte</div>
+  `;
+
+  actifs.forEach(a=>{
+    const idx=adresses.indexOf(a);
+    const color=markerColor(a);
+    const jda=a.jours_depuis_anniv;
+    const badgeTxt=a.type==='2ans'?`🔵 2 ans J+${jda}`:jda<=7?`🔴 URGENT J+${jda}`:jda<=20?`🟠 J+${jda}`:`🟢 J+${jda}`;
+    const badgeBg=a.type==='2ans'?'rgba(78,205,196,0.2)':jda<=7?'rgba(255,77,109,0.2)':jda<=20?'rgba(255,159,10,0.2)':'rgba(48,209,88,0.2)';
+
+    const marker=L.marker([a.lat,a.lon],{icon:markerIcon(a)});
+    const popupHtml=`
+      <div class="popup-title">${escHtml(a.adresse)}</div>
+      <div class="popup-sub">${escHtml(a.commune)} (${a.dept}) · ${a.nb} log · MESC ${a.mesc||'—'}</div>
+      <span class="popup-badge" style="background:${badgeBg};color:${color}">${badgeTxt}</span>
+      ${a.note?`<div style="font-size:0.7rem;color:#ffd60a;margin-bottom:6px">📝 ${escHtml(a.note)}</div>`:''}
+      <div class="popup-actions">
+        <button class="popup-btn pb-del" onclick="supprimerDepuisCarte(${idx})">🗑 Supprimer</button>
+        <button class="popup-btn pb-maps" onclick="ouvrirMaps(event,${idx})">Maps</button>
+        <button class="popup-btn pb-sign" onclick="signerDepuisCarte(${idx})">🎉 Signé</button>
+      </div>
+    `;
+    marker.bindPopup(popupHtml,{maxWidth:260});
+    marker.addTo(carteLayerGroup);
+    carteMarkers.push({marker,idx});
+  });
+
+  // Zoom sur dept sélectionné
+  if(dept&&DEPT_CENTERS[dept]){
+    carteMap.setView([DEPT_CENTERS[dept].lat,DEPT_CENTERS[dept].lon],10);
+  } else if(actifs.length>0){
+    const bounds=L.latLngBounds(actifs.map(a=>[a.lat,a.lon]));
+    carteMap.fitBounds(bounds,{padding:[30,30]});
+  }
+}
+
+function supprimerDepuisCarte(idx){
+  adresses[idx].supprime=true;
+  majStats(); afficher();
+  filtrerCarte();
+  toast('🗑 Adresse supprimée de la carte et du CSV');
+}
+
+function signerDepuisCarte(idx){
+  adresses[idx].action='signé';
+  adresses[idx].dateAction=new Date().toLocaleDateString('fr');
+  adresses[idx].supprime=true;
+  majStats(); afficher();
+  filtrerCarte();
+  toast('🎉 Contrat signé enregistré !');
+}
+
+function recentrerCarte(){
+  const dept=document.getElementById('carteDept').value;
+  if(dept&&DEPT_CENTERS[dept]){
+    carteMap.setView([DEPT_CENTERS[dept].lat,DEPT_CENTERS[dept].lon],10);
+  } else {
+    const actifs=adresses.filter(a=>!a.supprime&&a.lat&&a.lon);
+    if(actifs.length>0) carteMap.fitBounds(L.latLngBounds(actifs.map(a=>[a.lat,a.lon])),{padding:[30,30]});
+  }
+}
+
+function exporterCSVCarte(){
+  const dept=document.getElementById('carteDept').value;
+  const type=document.getElementById('carteType').value;
+  const urg=document.getElementById('carteUrgence').value;
+  let actifs=adresses.filter(a=>!a.supprime);
+  if(dept)  actifs=actifs.filter(a=>a.dept===dept);
+  if(type)  actifs=actifs.filter(a=>a.type===type);
+  if(urg)   actifs=actifs.filter(a=>getUrgence(a.jours_depuis_anniv)===parseInt(urg));
+  if(!actifs.length){toast('Aucune adresse visible');return;}
+  let csv='type;adresse;commune;dept;nb;mesc;jours_depuis_anniv;note;action\n';
+  actifs.forEach(a=>{csv+=`${a.type};${a.adresse};${a.commune};${a.dept};${a.nb};${a.mesc};${a.jours_depuis_anniv};${a.note||''};${a.action||''}\n`;});
+  const label=dept?`_dept${dept}`:'';
+  dl('\uFEFF'+csv,`anniversaires_carte${label}.csv`);
+  toast(`📄 ${actifs.length} adresses exportées`);
+}
+
+// ── TOAST ──
+let toastTimer;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),3500); }
+</script>
+</body>
+</html>

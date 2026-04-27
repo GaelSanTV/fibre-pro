@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AnnivFibre">
+<meta name="theme-color" content="#0d0d1a">
+<title>AnnivFibre v2 — Anniversaires Clients</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bricolage+Grotesque:wght@400;600;800&display=swap');
+
+:root {
+  --bg:#0d0d1a; --surface:#141428; --border:#1e1e3a;
+  --red:#ff4d6d; --orange:#ff9f0a; --green:#30d158;
+  --blue:#4ecdc4; --purple:#c77dff; --gold:#ffd60a;
+  --text:#f0f0ff; --muted:#5a5a8a;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Bricolage Grotesque',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(255,77,109,0.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 80%,rgba(78,205,196,0.06) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.container{max-width:900px;margin:0 auto;padding:20px;position:relative;z-index:1;}
+
+/* HEADER */
+header{padding:20px 0 16px;border-bottom:1px solid var(--border);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.logo{font-size:1.5rem;font-weight:800;letter-spacing:-0.03em;}
+.logo .fire{color:var(--red);}
+.tagline{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);margin-top:3px;}
+.header-actions{display:flex;gap:8px;align-items:center;}
+
+/* BOUTONS */
+.btn{padding:8px 16px;border-radius:8px;border:none;font-family:'Bricolage Grotesque',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--red);color:#fff;}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+.btn-secondary:hover{color:var(--text);}
+.btn-export{background:rgba(78,205,196,0.12);border:1px solid rgba(78,205,196,0.3);color:var(--blue);}
+.btn-ntfy{background:rgba(255,214,10,0.12);border:1px solid rgba(255,214,10,0.3);color:var(--gold);font-size:0.72rem;}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;transition:border-color 0.2s;}
+.stat.urgent{border-color:rgba(255,77,109,0.4);}
+.stat.warn{border-color:rgba(255,159,10,0.4);}
+.stat.ok{border-color:rgba(48,209,88,0.4);}
+.stat-val{font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:500;display:block;}
+.stat-val.red{color:var(--red);}
+.stat-val.orange{color:var(--orange);}
+.stat-val.green{color:var(--green);}
+.stat-val.blue{color:var(--blue);}
+.stat-val.gold{color:var(--gold);}
+.stat-label{font-size:0.6rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;}
+
+/* ALERTE DU JOUR */
+.alerte-jour{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.3);border-radius:12px;padding:14px 16px;margin-bottom:20px;display:none;}
+.alerte-titre{font-weight:700;color:var(--red);margin-bottom:8px;font-size:0.9rem;}
+.alerte-list{display:flex;flex-direction:column;gap:6px;}
+.alerte-item{font-size:0.78rem;color:var(--text);padding:6px 10px;background:rgba(255,77,109,0.08);border-radius:6px;}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:14px;padding:24px;text-align:center;cursor:pointer;transition:all 0.2s;margin-bottom:16px;background:var(--surface);}
+.upload-zone:hover{border-color:var(--red);background:rgba(255,77,109,0.04);}
+input[type=file]{display:none;}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;}
+.tab-btn{padding:7px 16px;border-radius:8px;border:none;background:transparent;color:var(--muted);font-family:'Bricolage Grotesque',sans-serif;font-size:0.8rem;cursor:pointer;transition:all 0.15s;}
+.tab-btn.active{background:var(--surface);color:var(--text);border:1px solid var(--border);}
+
+/* FILTRES */
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;}
+.ctrl-select{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.78rem;outline:none;}
+.ctrl-search{flex:1;min-width:140px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.78rem;outline:none;}
+.ctrl-search:focus{border-color:var(--red);}
+.count-info{font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);margin-left:auto;}
+
+/* ADRESSE CARDS */
+.addr-list{display:flex;flex-direction:column;gap:8px;}
+.addr-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;transition:border-color 0.2s;}
+.addr-card.urgence-1{border-left:3px solid var(--red);}
+.addr-card.urgence-2{border-left:3px solid var(--orange);}
+.addr-card.urgence-3{border-left:3px solid var(--green);}
+.addr-card.has-note{border-top:1px solid rgba(255,214,10,0.3);}
+
+.addr-badge{font-family:'DM Mono',monospace;font-size:0.65rem;padding:3px 8px;border-radius:20px;white-space:nowrap;font-weight:500;flex-shrink:0;}
+.badge-rouge{background:rgba(255,77,109,0.15);color:var(--red);}
+.badge-orange{background:rgba(255,159,10,0.15);color:var(--orange);}
+.badge-vert{background:rgba(48,209,88,0.15);color:var(--green);}
+.badge-2ans{background:rgba(78,205,196,0.15);color:var(--blue);}
+
+.addr-info{flex:1;min-width:0;}
+.addr-name{font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.addr-sub{font-size:0.68rem;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+.addr-note{font-size:0.72rem;color:var(--gold);margin-top:4px;font-style:italic;}
+
+.addr-jours{font-family:'DM Mono',monospace;font-size:0.78rem;font-weight:500;flex-shrink:0;padding:4px 8px;border-radius:6px;}
+.j-rouge{background:rgba(255,77,109,0.15);color:var(--red);}
+.j-orange{background:rgba(255,159,10,0.15);color:var(--orange);}
+.j-vert{background:rgba(48,209,88,0.15);color:var(--green);}
+
+.addr-actions{display:flex;gap:6px;flex-shrink:0;}
+.act-btn{padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.72rem;cursor:pointer;transition:all 0.15s;font-family:'Bricolage Grotesque',sans-serif;}
+.act-btn:active{transform:scale(0.95);}
+.act-btn.maps{color:var(--blue);border-color:rgba(78,205,196,0.3);}
+.act-btn.menu{color:var(--red);border-color:rgba(255,77,109,0.3);background:rgba(255,77,109,0.08);}
+
+/* ANALYTICS */
+.analytics{display:none;}
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+.chart-title{font-size:0.8rem;font-weight:700;margin-bottom:14px;color:var(--muted);}
+.chart-title span{color:var(--text);}
+.bar-chart{display:flex;flex-direction:column;gap:8px;}
+.bar-row{display:flex;align-items:center;gap:10px;}
+.bar-label{font-size:0.72rem;color:var(--muted);min-width:80px;font-family:'DM Mono',monospace;}
+.bar-track{flex:1;height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:4px;transition:width 1s ease;}
+.bar-val{font-size:0.7rem;font-family:'DM Mono',monospace;min-width:40px;text-align:right;}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;}
+.kpi-val{font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:500;}
+.kpi-label{font-size:0.62rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em;}
+
+/* NTFY CONFIG */
+.ntfy-wrap{background:rgba(255,214,10,0.06);border:1px solid rgba(255,214,10,0.2);border-radius:10px;padding:14px;margin-bottom:16px;}
+.ntfy-title{font-size:0.8rem;font-weight:700;color:var(--gold);margin-bottom:8px;}
+.ntfy-input{width:100%;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:0.8rem;outline:none;margin-bottom:8px;}
+.ntfy-input:focus{border-color:var(--gold);}
+
+/* OVERLAY / MENU */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;display:none;}
+.overlay.on{display:block;}
+.action-menu{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 16px 32px;z-index:1000;transform:translateY(100%);transition:transform 0.3s ease;}
+.action-menu.on{transform:translateY(0);}
+.menu-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px;}
+.menu-addr{font-size:0.82rem;font-weight:700;text-align:center;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.menu-sub{font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:16px;font-family:'DM Mono',monospace;}
+.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.menu-btn{padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s;}
+.menu-btn:active{transform:scale(0.97);}
+.menu-btn.sign{border-color:rgba(48,209,88,0.4);color:var(--green);}
+.menu-btn.fait{border-color:rgba(78,205,196,0.4);color:var(--blue);}
+.menu-btn.refus{border-color:rgba(255,77,109,0.4);color:var(--red);}
+.note-wrap{margin-bottom:10px;}
+.note-textarea{width:100%;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.82rem;outline:none;resize:none;}
+.note-textarea:focus{border-color:var(--gold);}
+.menu-cancel{width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Bricolage Grotesque',sans-serif;font-size:0.85rem;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);color:var(--text);padding:10px 18px;border-radius:10px;font-size:0.8rem;z-index:9999;opacity:0;transition:all 0.3s;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:flex;align-items:center;gap:8px;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-icon{font-size:3rem;margin-bottom:12px;}
+
+@media(max-width:600px){
+  .stats{grid-template-columns:repeat(3,1fr);}
+  .act-btn.maps{display:none;}
+  .kpi-row{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div>
+    <div class="logo">🎂 Anniv<span class="fire">Fibre</span> <span style="font-size:0.8rem;color:var(--muted);font-weight:400">v2</span></div>
+    <div class="tagline">Clients au plein tarif · 1 an & 2 ans · Alertes automatiques</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ntfy" onclick="toggleNtfy()">🔔 Alertes iPhone</button>
+    <button class="btn btn-export" onclick="exporterCSV()">📄 Export</button>
+    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">＋ Import CSV</button>
+    <input type="file" id="fileInput" accept=".csv" onchange="lire(this.files[0])">
+  </div>
+</header>
+
+<!-- NTFY CONFIG -->
+<div class="ntfy-wrap" id="ntfyWrap" style="display:none">
+  <div class="ntfy-title">🔔 Alertes push iPhone via ntfy.sh</div>
+  <input class="ntfy-input" id="ntfyTopic" placeholder="Ton canal ntfy (ex: gaelfibre_alertes)" value="gaelfibre_alertes">
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-ntfy" onclick="testerPush()">📱 Tester maintenant</button>
+    <button class="btn btn-secondary" style="font-size:0.72rem" onclick="envoyerRapportPush()">📊 Rapport anniversaires</button>
+    <button class="btn btn-secondary" style="font-size:0.72rem" onclick="toggleNtfy()">✕ Fermer</button>
+  </div>
+  <div style="font-size:0.68rem;color:var(--muted);margin-top:8px;font-family:DM Mono,monospace">
+    App ntfy sur App Store → Subscribe → gaelfibre_alertes
+  </div>
+</div>
+
+<!-- ALERTE DU JOUR -->
+<div class="alerte-jour" id="alerteJour">
+  <div class="alerte-titre">🚨 Anniversaires urgents aujourd'hui</div>
+  <div class="alerte-list" id="alerteList"></div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat urgent"><span class="stat-val red" id="sUrgent">—</span><div class="stat-label">🔴 J+1→7</div></div>
+  <div class="stat warn"><span class="stat-val orange" id="sWarn">—</span><div class="stat-label">🟠 J+8→20</div></div>
+  <div class="stat ok"><span class="stat-val green" id="sOk">—</span><div class="stat-label">🟢 J+21→30</div></div>
+  <div class="stat"><span class="stat-val blue" id="s2ans">—</span><div class="stat-label">🔵 2 ans</div></div>
+  <div class="stat"><span class="stat-val gold" id="sSign">—</span><div class="stat-label">🎉 Signés</div></div>
+</div>
+
+<!-- UPLOAD -->
+<div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+  <div style="font-size:2rem;margin-bottom:8px">📂</div>
+  <div style="font-size:0.85rem;color:var(--muted)"><strong style="color:var(--text)">Importer anniversaires_fibre.csv</strong><br>Glisse ou clique</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('liste',this)">📋 Liste</button>
+  <button class="tab-btn" onclick="switchTab('analytics',this)">📊 Analytics</button>
+  <button class="tab-btn" onclick="switchTab('circuit',this)">🗺️ Circuit du jour</button>
+</div>
+
+<!-- TAB LISTE -->
+<div id="tabListe">
+  <div class="controls">
+    <select class="ctrl-select" id="filtreUrgence" onchange="afficher()">
+      <option value="">Toutes urgences</option>
+      <option value="1">🔴 Urgent J+1→7</option>
+      <option value="2">🟠 Moyen J+8→20</option>
+      <option value="3">🟢 OK J+21→30</option>
+    </select>
+    <select class="ctrl-select" id="filtreType" onchange="afficher()">
+      <option value="">1 an + 2 ans</option>
+      <option value="1an">🔴 1 an</option>
+      <option value="2ans">🔵 2 ans</option>
+    </select>
+    <select class="ctrl-select" id="filtreDept" onchange="afficher()">
+      <option value="">Tous depts</option>
+    </select>
+    <input class="ctrl-search" id="searchAnniv" placeholder="🔍 Rechercher..." oninput="afficher()">
+    <select class="ctrl-select" id="filtreSort" onchange="afficher()">
+      <option value="urgence">Par urgence</option>
+      <option value="nb">Par nb logements</option>
+      <option value="commune">Par commune</option>
+    </select>
+    <button class="btn btn-secondary" style="font-size:0.72rem" onclick="nettoyerExpires()">🗑️ Supprimer >30j</button>
+    <div class="count-info" id="countInfo">—</div>
+  </div>
+  <div class="addr-list" id="addrList">
+    <div class="empty"><div class="empty-icon">🎂</div>Importez le fichier anniversaires_fibre.csv</div>
+  </div>
+</div>
+
+<!-- TAB ANALYTICS -->
+<div id="tabAnalytics" class="analytics">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="kpi-val" id="aTauxSign" style="color:var(--green)">—%</div><div class="kpi-label">Taux conversion anniv</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="aMeilleurMois" style="color:var(--gold)">—</div><div class="kpi-label">Meilleur mois</div></div>
+    <div class="kpi-card"><div class="kpi-val" id="aMoyJours" style="color:var(--blue)">—j</div><div class="kpi-label">Délai moyen signature</div></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">📅 <span>Signatures par mois</span></div>
+    <div class="bar-chart" id="chartMois"></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">🏢 <span>Résultats par type</span></div>
+    <div class="bar-chart" id="chartType"></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">🗺️ <span>Top communes</span></div>
+    <div class="bar-chart" id="chartCommune"></div>
+  </div>
+</div>
+
+<!-- TAB CIRCUIT -->
+<div id="tabCircuit" style="display:none">
+  <div style="background:rgba(78,205,196,0.06);border:1px solid rgba(78,205,196,0.2);border-radius:10px;padding:14px;margin-bottom:14px;">
+    <div style="font-size:0.82rem;font-weight:700;color:var(--blue);margin-bottom:6px">🗺️ Anniversaires dans ton circuit du jour</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:10px">Sélectionne un secteur pour voir les anniversaires à proximité</div>
+    <select class="ctrl-select" id="circuitCommune" onchange="afficherCircuit()" style="width:100%;margin-bottom:10px">
+      <option value="">Sélectionner une commune...</option>
+    </select>
+    <div class="addr-list" id="circuitList">
+      <div class="empty" style="padding:20px"><div class="empty-icon" style="font-size:2rem">🗺️</div>Sélectionnez une commune</div>
+    </div>
+    <button class="btn btn-export" onclick="exporterCircuit()" style="width:100%;margin-top:10px">📤 Exporter circuit anniversaires</button>
+  </div>
+  <div style="font-size:0.72rem;color:var(--muted);font-family:DM Mono,monospace;text-align:center">
+    💡 Inclure dans CircuitPro pour faire d'une pierre deux coups !
+  </div>
+</div>
+
+</div>
+
+<!-- OVERLAY + MENU -->
+<div class="overlay" id="overlay" onclick="fermerMenu()"></div>
+<div class="action-menu" id="actionMenu">
+  <div class="menu-handle"></div>
+  <div class="menu-addr" id="menuAddr">—</div>
+  <div class="menu-sub" id="menuSub">—</div>
+
+  <div class="note-wrap">
+    <textarea class="note-textarea" id="noteInput" rows="2" placeholder="📝 Note terrain (gardien, horaires, résultat...)"></textarea>
+    <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+      <button onclick="tagNote('Gardien présent matin')" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer">🏠 Gardien matin</button>
+      <button onclick="tagNote('Interphone cassé')" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer">📵 Interphone cassé</button>
+      <button onclick="tagNote('Digicode requis')" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer">🔢 Digicode</button>
+      <button onclick="tagNote('Absent - repasser')" style="padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer">👤 Absent</button>
+    </div>
+  </div>
+
+  <div class="menu-grid">
+    <button class="menu-btn sign" onclick="action('signé')">🎉 Contrat signé !</button>
+    <button class="menu-btn fait" onclick="action('fait')">✅ Déjà prospecté</button>
+    <button class="menu-btn refus" onclick="action('refus')">❌ Refus définitif</button>
+    <button class="menu-btn" onclick="sauvegarderNote()">💾 Sauvegarder note</button>
+  </div>
+  <button class="menu-cancel" onclick="fermerMenu()">Fermer</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let adresses = [];
+let supprimes = 0;
+let menuIdx = null;
+let dernier = null;
+let tabActif = 'liste';
+
+const MOIS = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+
+// ── URGENCE ───────────────────────────────────────────────
+function getUrgence(jda){
+  if(jda <= 7)  return 1;  // rouge
+  if(jda <= 20) return 2;  // orange
+  return 3;                // vert
+}
+function getUrgenceClass(jda){ return ['','urgence-1','urgence-2','urgence-3'][getUrgence(jda)]; }
+function getBadgeClass(a, jda){
+  if(a.type==='2ans') return 'badge-2ans';
+  if(jda<=7)  return 'badge-rouge';
+  if(jda<=20) return 'badge-orange';
+  return 'badge-vert';
+}
+function getJoursClass(jda){
+  if(jda<=7)  return 'j-rouge';
+  if(jda<=20) return 'j-orange';
+  return 'j-vert';
+}
+
+// ── TABS ─────────────────────────────────────────────────
+function switchTab(tab, btn){
+  ['liste','analytics','circuit'].forEach(t=>{
+    const el=document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(el) el.style.display='none';
+  });
+  document.getElementById('tabListe').style.display='none';
+  document.getElementById('tabAnalytics').style.display='none';
+  document.getElementById('tabCircuit').style.display='none';
+
+  if(tab==='liste')     document.getElementById('tabListe').style.display='block';
+  if(tab==='analytics'){ document.getElementById('tabAnalytics').style.display='block'; renderAnalytics(); }
+  if(tab==='circuit')  { document.getElementById('tabCircuit').style.display='block'; remplirCircuitSelect(); }
+
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  tabActif = tab;
+}
+
+// ── UPLOAD ────────────────────────────────────────────────
+document.getElementById('uploadZone').addEventListener('dragover',e=>{e.preventDefault();});
+document.getElementById('uploadZone').addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])lire(e.dataTransfer.files[0]);});
+
+function lire(file){
+  if(!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    if(lines.length<2){ toast('❌ Fichier invalide'); return; }
+    const sep = lines[0].includes(';')?';':',';
+    const h = lines[0].split(sep).map(v=>v.trim().replace(/"/g,'').toLowerCase());
+    const fi={
+      adresse:h.findIndex(v=>v==='adresse'),
+      commune:h.findIndex(v=>v.includes('commune')),
+      dept:h.findIndex(v=>v==='dpt'||v==='dept'),
+      nb:h.findIndex(v=>v==='nb'||v.includes('logement')),
+      mesc:h.findIndex(v=>v.includes('mesc')||v.includes('date_mesc')),
+      anniv:h.findIndex(v=>v.includes('prochaine_anniv')||v.includes('anniv')),
+      jours:h.findIndex(v=>v==='jours_anniv'||v.includes('jours_depuis')),
+      annees:h.findIndex(v=>v==='annees'),
+    };
+
+    adresses = [];
+    for(let i=1;i<lines.length;i++){
+      const c = lines[i].split(sep).map(v=>v.trim().replace(/"/g,''));
+      const nb = parseInt(c[fi.nb])||0;
+      if(nb<9) continue;
+      const jours_anniv = parseInt(c[fi.jours])||0;
+      const annees = parseInt(c[fi.annees])||0;
+      let type='';
+      if(annees===1&&jours_anniv>=335) type='1an';
+      else if(annees===2&&jours_anniv>=335) type='2ans';
+      else continue;
+      const jda = 365-jours_anniv;
+      if(jda>30) continue;
+
+      adresses.push({
+        adresse:c[fi.adresse]||'',commune:c[fi.commune]||'',dept:c[fi.dept]||'',
+        nb,mesc:c[fi.mesc]||'',anniv:c[fi.anniv]||'',
+        jours:annees*365+(365-jours_anniv),jours_depuis_anniv:jda,
+        annees,type,supprime:false,note:'',action:'',
+        dateAction:'',lat:null,lon:null,
+      });
+    }
+
+    const depts=[...new Set(adresses.map(a=>a.dept))].sort();
+    const sel=document.getElementById('filtreDept');
+    sel.innerHTML='<option value="">Tous depts</option>';
+    depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=`Dept ${d}`;sel.appendChild(o);});
+
+    document.getElementById('uploadZone').querySelector('div:last-child').innerHTML=
+      `<strong>${file.name}</strong> — ${adresses.length} adresses chargées`;
+
+    majStats();
+    afficher();
+    afficherAlerteJour();
+    toast(`✅ ${adresses.length} adresses chargées`);
+  };
+  r.readAsText(file,'utf-8');
+}
+
+// ── ALERTE DU JOUR ────────────────────────────────────────
+function afficherAlerteJour(){
+  const urgents = adresses.filter(a=>!a.supprime&&a.jours_depuis_anniv<=7);
+  const alerteEl = document.getElementById('alerteJour');
+  const alerteList = document.getElementById('alerteList');
+  if(!urgents.length){ alerteEl.style.display='none'; return; }
+  alerteEl.style.display='block';
+  alerteList.innerHTML = urgents.slice(0,5).map(a=>
+    `<div class="alerte-item">🔴 J+${a.jours_depuis_anniv} — ${a.adresse} — ${a.commune} (${a.dept}) — ${a.nb} log</div>`
+  ).join('') + (urgents.length>5?`<div class="alerte-item" style="color:var(--muted)">... et ${urgents.length-5} autres</div>`:'');
+}
+
+// ── STATS ─────────────────────────────────────────────────
+function majStats(){
+  const actifs = adresses.filter(a=>!a.supprime);
+  document.getElementById('sUrgent').textContent = actifs.filter(a=>a.jours_depuis_anniv<=7).length;
+  document.getElementById('sWarn').textContent   = actifs.filter(a=>a.jours_depuis_anniv>7&&a.jours_depuis_anniv<=20).length;
+  document.getElementById('sOk').textContent     = actifs.filter(a=>a.jours_depuis_anniv>20).length;
+  document.getElementById('s2ans').textContent   = actifs.filter(a=>a.type==='2ans').length;
+  document.getElementById('sSign').textContent   = adresses.filter(a=>a.action==='signé').length;
+}
+
+// ── AFFICHAGE ─────────────────────────────────────────────
+function afficher(){
+  const urgence  = document.getElementById('filtreUrgence').value;
+  const type     = document.getElementById('filtreType').value;
+  const dept     = document.getElementById('filtreDept').value;
+  const sort     = document.getElementById('filtreSort').value;
+  const search   = document.getElementById('searchAnniv').value.toLowerCase().trim();
+
+  let actifs = adresses.filter(a=>!a.supprime);
+  if(urgence) actifs=actifs.filter(a=>getUrgence(a.jours_depuis_anniv)===parseInt(urgence));
+  if(type)    actifs=actifs.filter(a=>a.type===type);
+  if(dept)    actifs=actifs.filter(a=>a.dept===dept);
+  if(search)  actifs=actifs.filter(a=>a.adresse.toLowerCase().includes(search)||a.commune.toLowerCase().includes(search));
+
+  if(sort==='urgence') actifs.sort((a,b)=>b.jours_depuis_anniv-a.jours_depuis_anniv);
+  if(sort==='nb')      actifs.sort((a,b)=>b.nb-a.nb);
+  if(sort==='commune') actifs.sort((a,b)=>a.commune.localeCompare(b.commune));
+
+  document.getElementById('countInfo').textContent=`${actifs.length} adresse${actifs.length>1?'s':''}`;
+
+  const list=document.getElementById('addrList');
+  if(!actifs.length){list.innerHTML='<div class="empty"><div class="empty-icon">✨</div>Aucune adresse correspondante</div>';return;}
+
+  list.innerHTML='';
+  actifs.forEach((a,i)=>{
+    const idx=adresses.indexOf(a);
+    const jda=a.jours_depuis_anniv;
+    const badgeLabel=a.type==='2ans'?`🔵 2 ans J+${jda}`:jda<=7?`🔴 URGENT J+${jda}`:jda<=20?`🟠 J+${jda}`:`🟢 J+${jda}`;
+    const div=document.createElement('div');
+    div.className=`addr-card ${getUrgenceClass(jda)}${a.note?' has-note':''}`;
+    div.innerHTML=`
+      <span class="addr-badge ${getBadgeClass(a,jda)}">${badgeLabel}</span>
+      <div class="addr-info">
+        <div class="addr-name">${a.adresse}</div>
+        <div class="addr-sub">${a.commune} (${a.dept}) · ${a.nb} log · MESC ${a.mesc}</div>
+        ${a.note?`<div class="addr-note">📝 ${a.note}</div>`:''}
+      </div>
+      <span class="addr-jours ${getJoursClass(jda)}">J+${jda}</span>
+      <div class="addr-actions">
+        <button class="act-btn maps" onclick="ouvrirMaps(event,'${a.adresse.replace(/'/g,"\\'")}')">Maps</button>
+        <button class="act-btn menu" onclick="ouvrirMenu(${idx})">⋯</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ── MENU ──────────────────────────────────────────────────
+function ouvrirMenu(idx){
+  menuIdx=idx;
+  const a=adresses[idx];
+  document.getElementById('menuAddr').textContent=a.adresse.substring(0,50);
+  document.getElementById('menuSub').textContent=`${a.commune} (${a.dept}) · ${a.nb} log · J+${a.jours_depuis_anniv}`;
+  document.getElementById('noteInput').value=a.note||'';
+  document.getElementById('actionMenu').classList.add('on');
+  document.getElementById('overlay').classList.add('on');
+}
+function fermerMenu(){
+  document.getElementById('actionMenu').classList.remove('on');
+  document.getElementById('overlay').classList.remove('on');
+  menuIdx=null;
+}
+function tagNote(tag){
+  const inp=document.getElementById('noteInput');
+  inp.value=(inp.value?inp.value+' · ':'')+tag;
+}
+function sauvegarderNote(){
+  if(menuIdx===null) return;
+  adresses[menuIdx].note=document.getElementById('noteInput').value.trim();
+  fermerMenu();
+  afficher();
+  toast('💾 Note sauvegardée !');
+}
+function action(type){
+  if(menuIdx===null) return;
+  dernier={idx:menuIdx,val:{supprime:adresses[menuIdx].supprime,action:adresses[menuIdx].action}};
+  const note=document.getElementById('noteInput').value.trim();
+  if(note) adresses[menuIdx].note=note;
+  adresses[menuIdx].action=type;
+  adresses[menuIdx].dateAction=new Date().toLocaleDateString('fr');
+  if(type!=='note') adresses[menuIdx].supprime=true;
+  fermerMenu();
+  majStats();
+  afficher();
+  const labels={signé:'🎉 Contrat signé !',fait:'✅ Prospecté',refus:'❌ Refus'};
+  toast(labels[type]||'✅ Action enregistrée');
+}
+
+// ── MAPS ─────────────────────────────────────────────────
+function ouvrirMaps(e,adresse){
+  e.stopPropagation();
+  const isIOS=/iPhone|iPad/.test(navigator.userAgent);
+  window.open(isIOS?`comgooglemaps://?q=${encodeURIComponent(adresse)}`:`https://maps.google.com/maps?q=${encodeURIComponent(adresse)}`,'_blank');
+}
+
+// ── NETTOYAGE ─────────────────────────────────────────────
+function nettoyerExpires(){
+  let count=0;
+  adresses.forEach(a=>{if(!a.supprime&&a.jours_depuis_anniv>30){a.supprime=true;count++;}});
+  majStats();afficher();
+  toast(`🗑️ ${count} expirées supprimées`);
+}
+
+// ── ANALYTICS ─────────────────────────────────────────────
+function renderAnalytics(){
+  const signes=adresses.filter(a=>a.action==='signé');
+  const total=adresses.length;
+  const taux=total>0?(signes.length/total*100).toFixed(1):0;
+  document.getElementById('aTauxSign').textContent=taux+'%';
+
+  // Par mois
+  const parMois={};
+  signes.forEach(a=>{
+    if(!a.dateAction) return;
+    const parts=a.dateAction.split('/');
+    if(parts.length<2) return;
+    const m=parseInt(parts[1])-1;
+    parMois[m]=(parMois[m]||0)+1;
+  });
+  const meilleurMoisIdx=Object.entries(parMois).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('aMeilleurMois').textContent=meilleurMoisIdx?MOIS[parseInt(meilleurMoisIdx[0])]:'—';
+
+  // Délai moyen
+  const delais=signes.filter(a=>a.jours_depuis_anniv).map(a=>a.jours_depuis_anniv);
+  const moy=delais.length?Math.round(delais.reduce((a,b)=>a+b,0)/delais.length):0;
+  document.getElementById('aMoyJours').textContent=moy+'j';
+
+  // Chart mois
+  const maxM=Math.max(...Object.values(parMois),1);
+  document.getElementById('chartMois').innerHTML=MOIS.map((m,i)=>{
+    const v=parMois[i]||0;
+    return`<div class="bar-row"><div class="bar-label">${m}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxM*100}%;background:var(--green)"></div></div><div class="bar-val" style="color:var(--green)">${v}</div></div>`;
+  }).join('');
+
+  // Chart type
+  const t1=adresses.filter(a=>a.type==='1an');
+  const t2=adresses.filter(a=>a.type==='2ans');
+  const s1=t1.filter(a=>a.action==='signé').length;
+  const s2=t2.filter(a=>a.action==='signé').length;
+  document.getElementById('chartType').innerHTML=`
+    <div class="bar-row"><div class="bar-label">1 an</div><div class="bar-track"><div class="bar-fill" style="width:${t1.length?s1/t1.length*100:0}%;background:var(--red)"></div></div><div class="bar-val" style="color:var(--red)">${t1.length?((s1/t1.length)*100).toFixed(0):0}%</div></div>
+    <div class="bar-row"><div class="bar-label">2 ans</div><div class="bar-track"><div class="bar-fill" style="width:${t2.length?s2/t2.length*100:0}%;background:var(--blue)"></div></div><div class="bar-val" style="color:var(--blue)">${t2.length?((s2/t2.length)*100).toFixed(0):0}%</div></div>
+  `;
+
+  // Top communes
+  const parCommune={};
+  adresses.forEach(a=>{parCommune[a.commune]=(parCommune[a.commune]||{total:0,signes:0});parCommune[a.commune].total++;if(a.action==='signé')parCommune[a.commune].signes++;});
+  const topC=Object.entries(parCommune).filter(([,v])=>v.total>=2).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+  const maxC=Math.max(...topC.map(([,v])=>v.total),1);
+  document.getElementById('chartCommune').innerHTML=topC.map(([c,v])=>
+    `<div class="bar-row"><div class="bar-label" style="font-size:0.65rem">${c.substring(0,12)}</div><div class="bar-track"><div class="bar-fill" style="width:${v.total/maxC*100}%;background:var(--purple)"></div></div><div class="bar-val" style="color:var(--purple)">${v.total}</div></div>`
+  ).join('');
+}
+
+// ── CIRCUIT ───────────────────────────────────────────────
+function remplirCircuitSelect(){
+  const communes=[...new Set(adresses.filter(a=>!a.supprime).map(a=>a.commune))].sort();
+  const sel=document.getElementById('circuitCommune');
+  sel.innerHTML='<option value="">Sélectionner une commune...</option>';
+  communes.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
+}
+
+function afficherCircuit(){
+  const commune=document.getElementById('circuitCommune').value;
+  const list=document.getElementById('circuitList');
+  if(!commune){list.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon" style="font-size:2rem">🗺️</div>Sélectionnez une commune</div>';return;}
+  const actifs=adresses.filter(a=>!a.supprime&&a.commune===commune);
+  if(!actifs.length){list.innerHTML='<div class="empty" style="padding:20px">Aucun anniversaire dans cette commune</div>';return;}
+  list.innerHTML='';
+  actifs.forEach(a=>{
+    const div=document.createElement('div');
+    div.className=`addr-card ${getUrgenceClass(a.jours_depuis_anniv)}`;
+    div.style.marginBottom='6px';
+    div.innerHTML=`
+      <span class="addr-badge ${getBadgeClass(a,a.jours_depuis_anniv)}">${a.type==='2ans'?'🔵 2ans':'🔴 1an'} J+${a.jours_depuis_anniv}</span>
+      <div class="addr-info"><div class="addr-name">${a.adresse}</div><div class="addr-sub">${a.nb} log · MESC ${a.mesc}</div></div>
+      <button class="act-btn maps" onclick="ouvrirMaps(event,'${a.adresse.replace(/'/g,"\\'")}')">Maps</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function exporterCircuit(){
+  const commune=document.getElementById('circuitCommune').value;
+  const actifs=adresses.filter(a=>!a.supprime&&(!commune||a.commune===commune));
+  if(!actifs.length){toast('Aucune adresse à exporter');return;}
+  let csv='type;adresse;commune;dept;nb;mesc;jours_depuis_anniv\n';
+  actifs.forEach(a=>{csv+=`${a.type};${a.adresse};${a.commune};${a.dept};${a.nb};${a.mesc};${a.jours_depuis_anniv}\n`;});
+  const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv'}));
+  Object.assign(document.createElement('a'),{href:url,download:'circuit_anniversaires.csv'}).click();
+  URL.revokeObjectURL(url);
+  toast('📤 Export circuit anniversaires !');
+}
+
+// ── NTFY ──────────────────────────────────────────────────
+function toggleNtfy(){
+  const w=document.getElementById('ntfyWrap');
+  w.style.display=w.style.display==='none'?'block':'none';
+}
+
+async function envoyerPush(titre, message){
+  const topic=document.getElementById('ntfyTopic').value||'gaelfibre_alertes';
+  try{
+    await fetch(`https://ntfy.sh/${topic}`,{
+      method:'POST',
+      body:message,
+      headers:{'Title':titre,'Priority':'high','Tags':'birthday,fire','Content-Type':'text/plain; charset=utf-8'}
+    });
+    return true;
+  }catch(e){return false;}
+}
+
+async function testerPush(){
+  const ok=await envoyerPush('Test AnnivFibre','Systeme anniversaires operationnel !');
+  toast(ok?'📱 Push envoyé ! Vérifie ton iPhone':'❌ Erreur push — vérifie ntfy.sh');
+}
+
+async function envoyerRapportPush(){
+  const urgents=adresses.filter(a=>!a.supprime&&a.jours_depuis_anniv<=7);
+  const semaine=adresses.filter(a=>!a.supprime&&a.jours_depuis_anniv<=14);
+  if(!semaine.length){toast('Aucun anniversaire cette semaine');return;}
+  const msg=`Urgents J+1-7: ${urgents.length}\nSemaine J+8-14: ${semaine.length-urgents.length}\n\nTop urgents:\n`+
+    urgents.slice(0,3).map(a=>`• J+${a.jours_depuis_anniv} ${a.commune} ${a.nb}log`).join('\n');
+  const ok=await envoyerPush(`${urgents.length} anniversaires urgents !`,msg);
+  toast(ok?'📊 Rapport envoyé sur iPhone !':'❌ Erreur push');
+}
+
+// ── EXPORT ────────────────────────────────────────────────
+function exporterCSV(){
+  const actifs=adresses.filter(a=>!a.supprime);
+  let csv='type;adresse;commune;dept;nb;mesc;anniv;jours_depuis_anniv;note;action\n';
+  actifs.forEach(a=>{csv+=`${a.type};${a.adresse};${a.commune};${a.dept};${a.nb};${a.mesc};${a.anniv};${a.jours_depuis_anniv};${a.note||''};${a.action||''}\n`;});
+  const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv'}));
+  Object.assign(document.createElement('a'),{href:url,download:'anniversaires_actifs.csv'}).click();
+  URL.revokeObjectURL(url);
+  toast('📄 Export CSV téléchargé !');
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+let toastTimer;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('on'),3500);
+}
+</script>
+</body>
+</html>
