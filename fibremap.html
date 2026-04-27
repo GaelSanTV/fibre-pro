@@ -6,12 +6,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="FibreMap">
 <meta name="theme-color" content="#09090f">
-<title>FibreMap — Carte Unifiée</title>
+<title>FibreMap v3</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
-
 :root{
   --bg:#09090f;--surface:#111118;--surface2:#16161f;
   --border:#1f1f2e;--border2:#2a2a3e;
@@ -24,18 +26,19 @@ html,body{height:100%;overflow:hidden;}
 body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
 
 /* HEADER */
-.hdr{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(9,9,15,0.98);border-bottom:1px solid var(--border);z-index:500;flex-shrink:0;}
-.logo{font-family:'Space Mono',monospace;font-size:0.95rem;font-weight:700;color:var(--blue);white-space:nowrap;}
+.hdr{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(9,9,15,0.98);border-bottom:1px solid var(--border);z-index:500;flex-shrink:0;}
+.logo{font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;color:var(--blue);white-space:nowrap;}
 .logo span{color:var(--text);}
-.hdr-chips{display:flex;gap:5px;flex:1;overflow-x:auto;padding:2px 0;}
-.chip{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:0.65rem;cursor:pointer;transition:all 0.15s;flex-shrink:0;white-space:nowrap;}
+.hdr-chips{display:flex;gap:4px;flex:1;overflow-x:auto;padding:2px 0;}
+.chip{display:flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:0.62rem;cursor:pointer;transition:all 0.15s;flex-shrink:0;white-space:nowrap;}
 .chip.on{border-color:var(--blue);}
-.chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.chip-dot{width:6px;height:6px;border-radius:50%;}
 .chip-val{font-family:'Space Mono',monospace;font-weight:700;}
 .chip-lbl{color:var(--muted);}
-.hdr-btns{display:flex;gap:6px;flex-shrink:0;}
-.hbtn{padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Syne',sans-serif;font-size:0.7rem;cursor:pointer;white-space:nowrap;}
+.hdr-btns{display:flex;gap:5px;flex-shrink:0;}
+.hbtn{padding:5px 9px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Syne',sans-serif;font-size:0.68rem;cursor:pointer;white-space:nowrap;}
 .hbtn.primary{background:var(--blue);color:#000;border-color:var(--blue);font-weight:700;}
+.hbtn.danger{background:rgba(255,51,85,0.12);color:var(--red);border-color:rgba(255,51,85,0.3);}
 input[type=file]{display:none;}
 
 /* MAP */
@@ -44,51 +47,72 @@ input[type=file]{display:none;}
 .leaflet-control-zoom{border:1px solid var(--border2)!important;background:var(--surface)!important;}
 .leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border-bottom:1px solid var(--border2)!important;line-height:26px!important;}
 
-/* CUSTOM MARKERS */
-.m-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(0,0,0,0.6);cursor:pointer;transition:transform 0.1s;}
-.m-dot:active{transform:scale(1.4);}
-.m-dot.big{width:18px;height:18px;}
-.m-dot.xl{width:22px;height:22px;border-width:3px;}
-.m-anniv{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid rgba(0,0,0,0.5);cursor:pointer;}
+/* CLUSTER CUSTOM */
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(0,200,255,0.15)!important;}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(0,200,255,0.35)!important;color:var(--text)!important;font-family:'Space Mono',monospace!important;font-size:0.7rem!important;font-weight:700!important;}
 
-/* SEARCH BAR */
-.search-bar{position:fixed;top:58px;left:50%;transform:translateX(-50%);width:calc(100% - 28px);max-width:420px;z-index:400;}
-.search-input{width:100%;padding:10px 14px 10px 36px;background:rgba(9,9,15,0.95);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.85rem;outline:none;backdrop-filter:blur(20px);}
+/* SEARCH */
+.search-bar{position:fixed;top:52px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:400px;z-index:400;}
+.search-input{width:100%;padding:9px 32px 9px 34px;background:rgba(9,9,15,0.96);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.82rem;outline:none;backdrop-filter:blur(20px);}
 .search-input:focus{border-color:var(--blue);}
-.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:0.9rem;pointer-events:none;}
-.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:0.9rem;cursor:pointer;}
-.search-results{background:rgba(9,9,15,0.98);border:1px solid var(--border2);border-radius:10px;margin-top:4px;overflow:hidden;max-height:200px;overflow-y:auto;display:none;}
-.search-result{padding:10px 14px;cursor:pointer;font-size:0.8rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.search-result:last-child{border-bottom:none;}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:0.85rem;pointer-events:none;}
+.search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;}
+.search-results{background:rgba(9,9,15,0.98);border:1px solid var(--border2);border-radius:10px;margin-top:4px;overflow:hidden;max-height:180px;overflow-y:auto;display:none;}
+.search-result{padding:9px 12px;cursor:pointer;font-size:0.78rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
 .search-result:active{background:var(--surface);}
 
+/* SCORE FILTER */
+.score-bar{position:fixed;top:98px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:400px;z-index:399;background:rgba(9,9,15,0.94);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;backdrop-filter:blur(20px);display:none;}
+.score-bar-row{display:flex;align-items:center;gap:10px;}
+.score-bar label{font-size:0.65rem;color:var(--muted);font-family:'Space Mono',monospace;white-space:nowrap;}
+.score-bar input[type=range]{flex:1;accent-color:var(--blue);}
+.score-bar-val{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--blue);min-width:30px;text-align:right;}
+
 /* BOTTOM PANEL */
-.panel{position:fixed;bottom:0;left:0;right:0;background:rgba(9,9,15,0.98);border-top:1px solid var(--border);z-index:400;padding:12px 14px;display:flex;align-items:center;gap:10px;backdrop-filter:blur(20px);}
+.panel{position:fixed;bottom:0;left:0;right:0;background:rgba(9,9,15,0.98);border-top:1px solid var(--border);z-index:400;padding:10px 12px;display:flex;align-items:center;gap:8px;backdrop-filter:blur(20px);}
 .panel-info{flex:1;min-width:0;}
-.panel-count{font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--muted);}
-.panel-actions{display:flex;gap:6px;}
-.pact{padding:7px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Syne',sans-serif;font-size:0.72rem;cursor:pointer;}
-.pact.export{color:var(--blue);border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.08);}
-.pact.clear{color:var(--red);border-color:rgba(255,51,85,0.3);}
+.panel-count{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--muted);}
+.panel-actions{display:flex;gap:5px;flex-wrap:wrap;}
+.pact{padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Syne',sans-serif;font-size:0.68rem;cursor:pointer;}
+.pact.blue{color:var(--blue);border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.08);}
+.pact.green{color:var(--green);border-color:rgba(0,212,106,0.3);background:rgba(0,212,106,0.06);}
+.pact.red{color:var(--red);border-color:rgba(255,51,85,0.3);}
+.pact.gold{color:var(--gold);border-color:rgba(255,215,0,0.3);background:rgba(255,215,0,0.06);}
+
+/* LIVE COUNTER */
+.live-counter{position:fixed;top:52px;right:12px;z-index:450;background:rgba(9,9,15,0.95);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;text-align:center;backdrop-filter:blur(20px);}
+.lc-val{font-family:'Space Mono',monospace;font-size:1.4rem;font-weight:700;color:var(--green);line-height:1;}
+.lc-label{font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;}
+.lc-sep{width:100%;height:1px;background:var(--border);margin:5px 0;}
+.lc-taux{font-family:'Space Mono',monospace;font-size:0.78rem;color:var(--gold);}
 
 /* ACTION SHEET */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:999;display:none;}
 .overlay.on{display:block;}
-.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));z-index:1000;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:14px 14px calc(18px + env(safe-area-inset-bottom));z-index:1000;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);max-height:90vh;overflow-y:auto;}
 .sheet.on{transform:translateY(0);}
-.sheet-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 14px;}
-.sheet-type{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
-.sheet-typedot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.sheet-typelbl{font-family:'Space Mono',monospace;font-size:0.65rem;color:var(--muted);}
-.sheet-addr{font-size:0.9rem;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sheet-sub{font-size:0.68rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:14px;}
-.sheet-note{width:100%;padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.82rem;outline:none;resize:none;margin-bottom:10px;}
+.sheet-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 12px;}
+.sheet-type{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+.sheet-typedot{width:9px;height:9px;border-radius:50%;}
+.sheet-typelbl{font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--muted);}
+.sheet-addr{font-size:0.88rem;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sheet-sub{font-size:0.65rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:10px;}
+
+/* HISTORIQUE IMMEUBLE */
+.histo-wrap{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;}
+.histo-title{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;font-family:'Space Mono',monospace;}
+.histo-items{display:flex;flex-direction:column;gap:4px;max-height:80px;overflow-y:auto;}
+.histo-item{font-size:0.7rem;display:flex;align-items:center;gap:6px;}
+.histo-date{font-family:'Space Mono',monospace;color:var(--muted);font-size:0.62rem;min-width:65px;}
+.histo-action{color:var(--text);}
+
+.sheet-note{width:100%;padding:9px 11px;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.8rem;outline:none;resize:none;margin-bottom:8px;}
 .sheet-note:focus{border-color:var(--gold);}
-.note-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
-.ntag{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer;font-family:'Syne',sans-serif;}
+.note-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.ntag{padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.65rem;cursor:pointer;font-family:'Syne',sans-serif;}
 .ntag:active{background:rgba(255,255,255,0.05);}
-.sheet-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px;}
-.sbtn{padding:13px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text);font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s;}
+.sheet-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.sbtn{padding:12px 8px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text);font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s;}
 .sbtn:active{transform:scale(0.97);}
 .sbtn.done{border-color:rgba(0,212,106,0.4);color:var(--green);}
 .sbtn.vide{border-color:rgba(255,214,0,0.3);color:var(--gold);}
@@ -98,51 +122,64 @@ input[type=file]{display:none;}
 .sbtn.sign{border-color:rgba(0,212,106,0.5);color:var(--green);background:rgba(0,212,106,0.08);}
 .sbtn.verif{border-color:rgba(255,214,0,0.4);color:var(--gold);grid-column:span 2;}
 .sbtn.maps{border-color:rgba(0,200,255,0.3);color:var(--blue);grid-column:span 2;}
-.sheet-cancel{width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.85rem;cursor:pointer;margin-top:4px;}
+.sbtn.route{border-color:rgba(0,212,106,0.3);color:var(--green);grid-column:span 2;background:rgba(0,212,106,0.06);}
+.sheet-cancel{width:100%;padding:11px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.82rem;cursor:pointer;margin-top:4px;}
 
-/* TOAST */
-.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:8px 16px;border-radius:8px;font-size:0.78rem;z-index:3000;opacity:0;transition:all 0.25s;white-space:nowrap;pointer-events:none;}
-.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
-
-/* IMPORT OVERLAY */
-.import-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
+/* IMPORT MODAL */
+.import-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;}
 .import-modal.on{display:flex;}
-.import-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px;width:100%;max-width:400px;}
-.import-title{font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--blue);}
-.import-zone{border:2px dashed var(--border2);border-radius:10px;padding:20px;text-align:center;cursor:pointer;margin-bottom:10px;transition:all 0.2s;}
-.import-zone:hover{border-color:var(--blue);}
-.import-zone-title{font-weight:600;margin-bottom:4px;font-size:0.85rem;}
-.import-zone-sub{font-size:0.7rem;color:var(--muted);}
-.import-close{width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Syne',sans-serif;cursor:pointer;margin-top:8px;}
+.import-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:20px;width:100%;max-width:380px;max-height:90vh;overflow-y:auto;}
+.import-title{font-size:0.95rem;font-weight:700;margin-bottom:14px;color:var(--blue);}
+.import-zone{border:2px dashed var(--border2);border-radius:10px;padding:16px;text-align:center;cursor:pointer;margin-bottom:8px;transition:all 0.2s;}
+.import-zone:hover,.import-zone:active{border-color:var(--blue);}
+.iz-icon{font-size:1.3rem;margin-bottom:4px;}
+.iz-title{font-weight:600;font-size:0.82rem;margin-bottom:2px;}
+.iz-sub{font-size:0.65rem;color:var(--muted);}
+.import-close{width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Syne',sans-serif;cursor:pointer;margin-top:8px;font-size:0.82rem;}
 
 /* LEGEND */
-.legend{position:fixed;bottom:60px;right:10px;background:rgba(9,9,15,0.95);border:1px solid var(--border);border-radius:10px;padding:10px 12px;z-index:300;backdrop-filter:blur(20px);}
-.leg-row{display:flex;align-items:center;gap:7px;margin-bottom:5px;font-size:0.63rem;color:var(--muted);}
+.legend{position:fixed;bottom:54px;right:10px;background:rgba(9,9,15,0.95);border:1px solid var(--border);border-radius:10px;padding:10px 12px;z-index:300;backdrop-filter:blur(20px);}
+.leg-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:0.6rem;color:var(--muted);}
 .leg-row:last-child{margin-bottom:0;}
-.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.leg-dot{width:9px;height:9px;border-radius:50%;}
+.leg-sep{width:100%;height:1px;background:var(--border);margin:5px 0;}
+
+/* ITINERAIRE MODAL */
+.itinerary-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;display:none;flex-direction:column;padding:20px;}
+.itinerary-modal.on{display:flex;}
+.iti-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:18px;flex:1;overflow-y:auto;max-height:70vh;}
+.iti-title{font-size:0.95rem;font-weight:700;color:var(--green);margin-bottom:12px;}
+.iti-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.iti-item:last-child{border-bottom:none;}
+.iti-num{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);min-width:20px;}
+.iti-addr{flex:1;font-size:0.78rem;}
+.iti-sub{font-size:0.62rem;color:var(--muted);}
+.iti-btns{display:flex;gap:8px;margin-top:14px;}
+.iti-btn{flex:1;padding:12px;border-radius:10px;border:none;font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;}
+.iti-btn.go{background:var(--green);color:#000;}
+.iti-btn.cancel{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+
+/* TOAST */
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:7px 14px;border-radius:8px;font-size:0.75rem;z-index:3000;opacity:0;transition:all 0.25s;white-space:nowrap;pointer-events:none;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* SCROLLBAR */
-::-webkit-scrollbar{width:3px;height:3px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-
-/* TOOLTIP */
-.leaflet-tooltip-dark{background:rgba(9,9,15,0.95);border:1px solid var(--border2);color:var(--text);font-family:'Syne',sans-serif;font-size:0.72rem;padding:6px 10px;border-radius:6px;}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.leaflet-tooltip{background:rgba(9,9,15,0.95)!important;border:1px solid var(--border2)!important;color:var(--text)!important;font-family:'Syne',sans-serif!important;font-size:0.7rem!important;padding:5px 9px!important;border-radius:6px!important;box-shadow:none!important;}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div class="hdr">
   <div class="logo">Fibre<span>Map</span></div>
   <div class="hdr-chips" id="chips"></div>
   <div class="hdr-btns">
-    <button class="hbtn" onclick="ouvrirImport()">＋</button>
-    <button class="hbtn primary" onclick="exporterTout()">Export</button>
+    <button class="hbtn" onclick="toggleScoreBar()">⭐ Score</button>
+    <button class="hbtn" onclick="ouvrirImport()">＋ Import</button>
+    <button class="hbtn primary" onclick="ouvrirItineraire()">🗺 Route</button>
   </div>
 </div>
 
-<!-- SEARCH -->
 <div class="search-bar">
   <span class="search-icon">🔍</span>
   <input class="search-input" id="searchInput" placeholder="Rechercher adresse, commune..." oninput="rechercher(this.value)">
@@ -150,16 +187,32 @@ input[type=file]{display:none;}
   <div class="search-results" id="searchResults"></div>
 </div>
 
-<!-- MAP -->
+<div class="score-bar" id="scoreBar">
+  <div class="score-bar-row">
+    <label>Score min</label>
+    <input type="range" id="scoreSlider" min="0" max="100" value="0" oninput="filtrerScore(this.value)">
+    <span class="score-bar-val" id="scoreVal">0</span>
+  </div>
+</div>
+
+<!-- LIVE COUNTER -->
+<div class="live-counter" id="liveCounter" style="display:none">
+  <div class="lc-val" id="lcContrats">0</div>
+  <div class="lc-label">Contrats</div>
+  <div class="lc-sep"></div>
+  <div class="lc-taux" id="lcTaux">0%</div>
+  <div class="lc-label">Conv.</div>
+</div>
+
 <div id="map"></div>
 
 <!-- LEGEND -->
-<div class="legend">
+<div class="legend" id="legend">
   <div class="leg-row"><div class="leg-dot" style="background:var(--gold)"></div>⭐ Orange+SFR</div>
   <div class="leg-row"><div class="leg-dot" style="background:var(--orange)"></div>🟠 Orange</div>
   <div class="leg-row"><div class="leg-dot" style="background:var(--purple)"></div>🔴 SFR</div>
   <div class="leg-row"><div class="leg-dot" style="background:var(--pink)"></div>🎂 Anniversaire</div>
-  <div style="border-top:1px solid var(--border);margin:6px 0"></div>
+  <div class="leg-sep"></div>
   <div class="leg-row"><div class="leg-dot" style="background:#ff2d55;opacity:0.5"></div>🔥 &lt;30j</div>
   <div class="leg-row"><div class="leg-dot" style="background:#ff9f0a;opacity:0.5"></div>🟠 30-90j</div>
   <div class="leg-row"><div class="leg-dot" style="background:#30d158;opacity:0.5"></div>🟢 90-180j</div>
@@ -173,8 +226,9 @@ input[type=file]{display:none;}
   </div>
   <div class="panel-actions">
     <button class="pact" onclick="toggleLegend()">🗺</button>
-    <button class="pact export" onclick="exporterTraites()">📤 Export traités</button>
-    <button class="pact clear" onclick="confirmerNettoyage()">🗑</button>
+    <button class="pact" onclick="toggleCluster()">🔵 Cluster</button>
+    <button class="pact blue" onclick="exporterActifs()">📤 Actifs</button>
+    <button class="pact gold" onclick="exporterTraites()">📋 Traités</button>
   </div>
 </div>
 
@@ -182,36 +236,27 @@ input[type=file]{display:none;}
 <div class="import-modal" id="importModal">
   <div class="import-card">
     <div class="import-title">📂 Importer des données</div>
-
     <div class="import-zone" onclick="document.getElementById('fileOrange').click()">
-      <div style="font-size:1.4rem;margin-bottom:6px">🟠</div>
-      <div class="import-zone-title">Orange / Fusion Orange+SFR</div>
-      <div class="import-zone-sub">fusion_orange_sfr.csv ou orange_eligibles_final.csv</div>
+      <div class="iz-icon">🟠</div><div class="iz-title">Orange / Fusion Orange+SFR</div>
+      <div class="iz-sub">fusion_orange_sfr.csv</div>
     </div>
     <input type="file" id="fileOrange" accept=".csv" onchange="importerFichier(event,'orange')">
-
     <div class="import-zone" onclick="document.getElementById('fileSFR').click()">
-      <div style="font-size:1.4rem;margin-bottom:6px">🔴</div>
-      <div class="import-zone-title">SFR confirmés</div>
-      <div class="import-zone-sub">sfr_eligibles_confirmes.csv</div>
+      <div class="iz-icon">🔴</div><div class="iz-title">SFR confirmés</div>
+      <div class="iz-sub">sfr_eligibles_confirmes.csv</div>
     </div>
     <input type="file" id="fileSFR" accept=".csv" onchange="importerFichier(event,'sfr')">
-
     <div class="import-zone" onclick="document.getElementById('fileAnniv').click()">
-      <div style="font-size:1.4rem;margin-bottom:6px">🎂</div>
-      <div class="import-zone-title">Anniversaires clients</div>
-      <div class="import-zone-sub">anniversaires_fibre.csv</div>
+      <div class="iz-icon">🎂</div><div class="iz-title">Anniversaires clients</div>
+      <div class="iz-sub">anniversaires_fibre.csv</div>
     </div>
     <input type="file" id="fileAnniv" accept=".csv" onchange="importerFichier(event,'anniv')">
-
     <div class="import-zone" onclick="document.getElementById('fileChaleur').click()">
-      <div style="font-size:1.4rem;margin-bottom:6px">🔥</div>
-      <div class="import-zone-title">Historique prospection</div>
-      <div class="import-zone-sub">villes_dates.csv — zones déjà visitées</div>
+      <div class="iz-icon">🔥</div><div class="iz-title">Historique prospection</div>
+      <div class="iz-sub">villes_dates.csv</div>
     </div>
     <input type="file" id="fileChaleur" accept=".csv" onchange="importerChaleur(event)">
-
-    <button class="import-close" onclick="fermerImport()">Fermer</button>
+    <button class="import-close" onclick="fermerImport()">✕ Fermer</button>
   </div>
 </div>
 
@@ -223,63 +268,154 @@ input[type=file]{display:none;}
   <div class="sheet-addr" id="sheetAddr">—</div>
   <div class="sheet-sub" id="sheetSub">—</div>
 
-  <textarea class="sheet-note" id="sheetNote" rows="2" placeholder="📝 Note terrain (gardien, horaires, résultat...)"></textarea>
+  <!-- HISTORIQUE IMMEUBLE -->
+  <div class="histo-wrap" id="histoWrap" style="display:none">
+    <div class="histo-title">📋 Historique visites</div>
+    <div class="histo-items" id="histoItems"></div>
+  </div>
+
+  <textarea class="sheet-note" id="sheetNote" rows="2" placeholder="📝 Note terrain..."></textarea>
   <div class="note-tags">
     <button class="ntag" onclick="addTag('Absent')">👤 Absent</button>
     <button class="ntag" onclick="addTag('Fan SFR')">📵 Fan SFR</button>
     <button class="ntag" onclick="addTag('Fan Free')">📵 Fan Free</button>
-    <button class="ntag" onclick="addTag('Trop cher')">💰 Trop cher</button>
+    <button class="ntag" onclick="addTag('Trop cher')">💰 Cher</button>
     <button class="ntag" onclick="addTag('Engagé')">🔒 Engagé</button>
     <button class="ntag" onclick="addTag('Gardien matin')">🏠 Gardien</button>
     <button class="ntag" onclick="addTag('À repasser')">🔄 Repasser</button>
+    <button class="ntag" onclick="addTag('Mauvaise expérience')">😤 Mauvaise exp.</button>
   </div>
 
   <div class="sheet-grid">
     <button class="sbtn sign" onclick="action('signé')">🎉 Contrat signé !</button>
-    <button class="sbtn done" onclick="action('done')">✅ Déjà prospecté</button>
+    <button class="sbtn done" onclick="action('done')">✅ Prospecté</button>
     <button class="sbtn vide" onclick="action('vide')">🏚️ Pas habité</button>
     <button class="sbtn concur" onclick="action('concurrent')">🔴 Concurrent</button>
     <button class="sbtn revoir" onclick="action('revoir')">🔄 À revoir</button>
     <button class="sbtn bad" onclick="action('bad')">❌ Mauvaise adresse</button>
     <button class="sbtn verif" onclick="action('verifier')">🔍 À vérifier Orange/SFR</button>
     <button class="sbtn maps" onclick="ouvrirMaps()">📍 Ouvrir dans Maps</button>
+    <button class="sbtn route" onclick="ajouterItineraire()">🗺️ Ajouter à l'itinéraire</button>
   </div>
   <button class="sheet-cancel" onclick="fermerSheet()">Annuler</button>
+</div>
+
+<!-- ITINERAIRE MODAL -->
+<div class="itinerary-modal" id="itiModal">
+  <div class="iti-card">
+    <div class="iti-title">🗺️ Itinéraire du jour</div>
+    <div id="itiList"></div>
+  </div>
+  <div class="iti-btns">
+    <button class="iti-btn go" onclick="lancerItineraire()">🚗 Lancer dans Maps</button>
+    <button class="iti-btn cancel" onclick="viderItineraire()">🗑️ Vider</button>
+    <button class="iti-btn cancel" onclick="fermerItineraire()">✕</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── DATA ──────────────────────────────────────────────────
-let points = [];
-let traites = [];
-let chaleurVilles = [];
+// ── STATE ─────────────────────────────────────────────────
+let points = [], traites = [], chaleurVilles = [];
+let itineraire = [];
 let selectedPoint = null;
-let markers = {};
-let layerOrange, layerSFR, layerBoth, layerAnniv, layerChaleur;
-let layersOn = {orange:true, sfr:true, both:true, anniv:true, chaleur:true};
+let histoImmeuble = {}; // adresse → [{date, action, note}]
+let scoreMin = 0;
+let clusterOn = true;
+let contrats = 0, portes = 0;
+
+// ── LAYERS ────────────────────────────────────────────────
+let layersOn = {orange:true,sfr:true,both:true,anniv:true,chaleur:true};
 
 // ── MAP ───────────────────────────────────────────────────
 window.addEventListener('load', function(){
-const map = L.map('map', {
-  zoomControl: false,
-  attributionControl: false,
-}).setView([45.1, 5.7], 8);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-}).addTo(map);
-
+const map = L.map('map',{zoomControl:false,attributionControl:false}).setView([45.1,5.7],8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 L.control.zoom({position:'bottomright'}).addTo(map);
 
-layerOrange = L.layerGroup().addTo(map);
-layerSFR    = L.layerGroup().addTo(map);
-layerBoth   = L.layerGroup().addTo(map);
-layerAnniv  = L.layerGroup().addTo(map);
-layerChaleur = L.layerGroup().addTo(map);
+// Cluster groups
+const clusterOpts = {
+  maxClusterRadius:60,
+  iconCreateFunction: function(cluster){
+    const n = cluster.getChildCount();
+    const size = n<10?30:n<50?36:42;
+    return L.divIcon({
+      html:`<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(0,200,255,0.25);border:2px solid rgba(0,200,255,0.5);display:flex;align-items:center;justify-content:center;font-family:Space Mono,monospace;font-size:${n<10?'0.75':'0.65'}rem;font-weight:700;color:#00c8ff">${n}</div>`,
+      className:'',iconSize:[size,size],iconAnchor:[size/2,size/2]
+    });
+  }
+};
 
-// ── IMPORT CHALEUR ────────────────────────────────────────
-const COORDS_CHALEUR = {
+let layerOrange  = L.markerClusterGroup(clusterOpts);
+let layerSFR     = L.markerClusterGroup(clusterOpts);
+let layerBoth    = L.markerClusterGroup(clusterOpts);
+let layerAnniv   = L.markerClusterGroup(clusterOpts);
+let layerChaleur = L.layerGroup();
+
+[layerOrange,layerSFR,layerBoth,layerAnniv,layerChaleur].forEach(l=>map.addLayer(l));
+
+const allLayers = {orange:layerOrange,sfr:layerSFR,both:layerBoth,anniv:layerAnniv,chaleur:layerChaleur};
+
+// ── COULEURS ─────────────────────────────────────────────
+function getColor(p){
+  if(p.ptype==='both') return '#ffd700';
+  if(p.ptype==='sfr')  return '#b06cff';
+  if(p.ptype==='anniv'){
+    return p.jours_anniv<=7?'#ff2d55':p.jours_anniv<=20?'#ff9f0a':'#30d158';
+  }
+  const c=p.couleur;
+  if(c==='red')    return '#ff3355';
+  if(c==='orange') return '#ff8c00';
+  if(c==='blue')   return '#00c8ff';
+  return '#00d46a';
+}
+function getSize(p){
+  if(p.ptype==='both') return 18;
+  if(p.locaux>=30) return 18;
+  if(p.locaux>=10) return 14;
+  return 11;
+}
+function getLayer(p){
+  return {both:layerBoth,sfr:layerSFR,anniv:layerAnniv}[p.ptype]||layerOrange;
+}
+
+// ── MARKERS ───────────────────────────────────────────────
+function placerMarkers(){
+  [layerOrange,layerSFR,layerBoth,layerAnniv].forEach(l=>l.clearLayers());
+  const actifs = points.filter(p=>
+    !['done','bad','concurrent','signé'].includes(p.action) &&
+    p.score >= scoreMin &&
+    (!['revoir','verifier'].includes(p.action)||true)
+  );
+  actifs.forEach(p=>{
+    const col=getColor(p), sz=getSize(p);
+    const isBoth = p.ptype==='both';
+    const icon = L.divIcon({
+      html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${col};border:2px solid rgba(0,0,0,0.5);${isBoth?'box-shadow:0 0 8px '+col:''};cursor:pointer"></div>`,
+      className:'',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]
+    });
+    const m = L.marker([p.lat,p.lon],{icon});
+    m.bindTooltip(`${p.adresse}<br><span style="color:${col}">${p.locaux} log</span>${p.score?' · '+p.score+'pts':''}`,{direction:'top',offset:[0,-sz/2]});
+    m.on('click',()=>ouvrirSheet(p));
+    getLayer(p).addLayer(m);
+  });
+  majPanel();
+  majChips();
+}
+
+function toggleCluster(){
+  clusterOn = !clusterOn;
+  [layerOrange,layerSFR,layerBoth,layerAnniv].forEach(l=>{
+    l.disableClustering?.[()=>{}];
+    if(!clusterOn) l.disableClustering?.();
+    else l.enableClustering?.();
+  });
+  toast(clusterOn?'🔵 Clustering activé':'⚪ Clustering désactivé');
+}
+
+// ── CHALEUR ───────────────────────────────────────────────
+const COORDS_V = {
   "Valence":[44.933,4.892],"Romans Sur Isère":[45.046,5.052],"Montélimar":[44.558,4.752],
   "Grenoble":[45.188,5.724],"Vienne":[45.523,4.874],"Bourgoin":[45.585,5.291],
   "Annecy":[45.899,6.129],"Chambery":[45.564,5.919],"Albertville":[45.675,6.392],
@@ -288,453 +424,375 @@ const COORDS_CHALEUR = {
   "La Tour Du Pin":[45.564,5.441],"Voiron":[45.363,5.590],"Morestel":[45.680,5.468],
   "Annonay":[45.241,4.669],"Crest":[44.728,5.023],"Die":[44.751,5.371],
   "Bourg En Bresse":[46.205,5.225],"Rumilly":[45.867,5.943],"Ugine":[45.753,6.418],
-  "Aix Les Bains":[45.688,5.912],"Saint Chamond":[45.478,4.517],"Firminy":[45.389,4.289],
-  "Charlieu":[46.160,4.174],"Belley":[45.760,5.689],"Vizille":[45.079,5.774],
-  "Saint Laurent Du Pont":[45.388,5.728],"Allevard":[45.394,6.073],"Crolles":[45.278,5.878],
-  "Boëge":[46.215,6.496],"Thonon Les Bains":[46.371,6.479],"Cluses":[46.061,6.577],
+  "Aix Les Bains":[45.688,5.912],"Saint Chamond":[45.478,4.517],"Charlieu":[46.160,4.174],
+  "Belley":[45.760,5.689],"Vizille":[45.079,5.774],"Allevard":[45.394,6.073],
+  "Crolles":[45.278,5.878],"Boëge":[46.215,6.496],"Thonon Les Bains":[46.371,6.479],
   "Avignon":[43.949,4.806],"Orange":[44.137,4.809],"Carpentras":[44.056,5.048],
-  "Vallon Pont D Arc":[44.406,4.395],"Ruoms":[44.458,4.341],"Villeneuve De Berg":[44.540,4.500],
-  "Livron":[44.774,4.849],"Charmes Sur Rhône":[44.890,4.842],"Tain L Hermitage":[45.070,4.842],
-  "Saint Paul Trois Châteaux":[44.349,4.769],"Pontchara":[45.435,5.988],
-  "Aime La Plagne":[45.557,6.644],"La Chambre":[45.361,6.299],"Saint Jean De Maurienne":[45.271,6.436],
-  "Moirans":[45.330,5.574],"Voreppe":[45.302,5.648],"L Isle D Abeau":[45.617,5.226],
-  "Heyrieux":[45.628,5.049],"Dolomieu":[45.601,5.543],"Belley":[45.760,5.689],
-  "Peronnas":[46.173,5.259],"Miribel":[45.830,4.952],"Trevoux":[45.943,4.769],
+  "Vallon Pont D Arc":[44.406,4.395],"Ruoms":[44.458,4.341],"Livron":[44.774,4.849],
+  "Tain L Hermitage":[45.070,4.842],"Saint Paul Trois Châteaux":[44.349,4.769],
+  "Pontchara":[45.435,5.988],"Aime La Plagne":[45.557,6.644],"La Chambre":[45.361,6.299],
+  "Moirans":[45.330,5.574],"L Isle D Abeau":[45.617,5.226],"Heyrieux":[45.628,5.049],
+  "Dolomieu":[45.601,5.543],"Peronnas":[46.173,5.259],"Miribel":[45.830,4.952],
+  "Trevoux":[45.943,4.769],"Firminy":[45.389,4.289],"Belley":[45.760,5.689],
 };
 
-function importerChaleur(event){
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const lines = e.target.result.split('\n').filter(l=>l.trim());
-    if(lines.length < 2){ toast('❌ Fichier invalide'); return; }
-    const sep = lines[0].includes(';')?';':',';
-    const h = lines[0].split(sep).map(v=>v.trim().replace(/"/g,'').toLowerCase());
-    const fd = h.findIndex(v=>v.includes('date'));
-    const fv = h.findIndex(v=>v.includes('ville'));
-    if(fd<0||fv<0){ toast('❌ Colonnes date/ville non trouvées'); return; }
+function placerChaleur(){
+  layerChaleur.clearLayers();
+  const stats={};
+  chaleurVilles.forEach(v=>{
+    if(!stats[v.ville])stats[v.ville]={nb:0,minJ:9999};
+    stats[v.ville].nb++;
+    if(v.jours<stats[v.ville].minJ)stats[v.ville].minJ=v.jours;
+  });
+  Object.entries(stats).forEach(([ville,s])=>{
+    let coord=null;
+    const vl=ville.toLowerCase();
+    for(const[k,c] of Object.entries(COORDS_V)){
+      if(k.toLowerCase()===vl||vl.includes(k.toLowerCase())||k.toLowerCase().includes(vl)){coord=c;break;}
+    }
+    if(!coord)return;
+    const j=s.minJ;
+    const col=j<30?'#ff2d55':j<90?'#ff9f0a':j<180?'#30d158':'#0a84ff';
+    const r=Math.min(8+s.nb*2,24);
+    L.circleMarker(coord,{radius:r,fillColor:col,color:'rgba(0,0,0,0.3)',weight:1,opacity:0.5,fillOpacity:0.28})
+      .bindTooltip(`🔥 ${ville} · ${s.nb} visite${s.nb>1?'s':''} · ${j}j`,{direction:'top'})
+      .addTo(layerChaleur);
+  });
+}
 
-    const today = new Date();
-    chaleurVilles = [];
+// ── IMPORT ────────────────────────────────────────────────
+function ouvrirImport(){document.getElementById('importModal').classList.add('on');}
+function fermerImport(){document.getElementById('importModal').classList.remove('on');}
 
+function importerFichier(event,type){
+  const file=event.target.files[0];
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const lines=e.target.result.split('\n').filter(l=>l.trim());
+    if(lines.length<2){toast('❌ Fichier invalide');return;}
+    const sep=lines[0].includes(';')?';':',';
+    const h=lines[0].split(sep).map(v=>v.trim().replace(/"/g,'').toLowerCase());
+    const fi={
+      adresse:h.findIndex(v=>v==='adresse'),commune:h.findIndex(v=>v.includes('commune')),
+      dept:h.findIndex(v=>v==='dept'||v==='dpt'),locaux:h.findIndex(v=>v==='locaux'||v.includes('logloc')||v==='nb'),
+      lat:h.findIndex(v=>v==='lat'||v==='ban_lat'),lon:h.findIndex(v=>v==='lon'||v==='ban_lon'),
+      couleur:h.findIndex(v=>v==='couleur'),score:h.findIndex(v=>v==='score'),
+      operateur:h.findIndex(v=>v==='operateur'),jours:h.findIndex(v=>v.includes('jours_depuis_anniv')),
+      mesc:h.findIndex(v=>v.includes('mesc')),annees:h.findIndex(v=>v==='annees'),
+    };
+    let added=0;
     for(let i=1;i<lines.length;i++){
-      const c = lines[i].split(sep).map(v=>v.trim().replace(/"/g,''));
-      const ville = c[fv]?.trim();
-      const dateStr = c[fd]?.trim();
-      if(!ville||!dateStr) continue;
+      const c=lines[i].split(sep).map(v=>v.trim().replace(/"/g,''));
+      const lat=parseFloat(c[fi.lat]),lon=parseFloat(c[fi.lon]);
+      if(isNaN(lat)||isNaN(lon))continue;
+      const adresse=fi.adresse>=0?c[fi.adresse]:'';
+      if(!adresse)continue;
+      const id=adresse+'_'+lat.toFixed(4)+'_'+lon.toFixed(4);
+      if(points.find(p=>p.id===id))continue;
+      let ptype=type;
+      const op=fi.operateur>=0?c[fi.operateur]:'';
+      if(op==='both')ptype='both';
+      else if(op==='sfr')ptype='sfr';
+      const nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
+      const jda=fi.jours>=0?parseInt(c[fi.jours])||0:0;
+      if(type==='anniv'&&(jda<=0||jda>30))continue;
+      if(type==='anniv')ptype='anniv';
+      points.push({
+        id,adresse,commune:fi.commune>=0?c[fi.commune]:'',dept:fi.dept>=0?c[fi.dept]:'',
+        locaux:nb,lat,lon,couleur:fi.couleur>=0?c[fi.couleur]:'',
+        score:fi.score>=0?parseFloat(c[fi.score])||0:0,ptype,
+        jours_anniv:jda,mesc:fi.mesc>=0?c[fi.mesc]:'',
+        note:'',action:'',source:file.name,
+      });
+      added++;
+    }
+    placerMarkers();
+    majChips();
+    toast(`✅ ${added} points ajoutés`);
+    fermerImport();
+    document.getElementById('liveCounter').style.display='block';
+  };
+  r.readAsText(file,'utf-8');
+}
+
+function importerChaleur(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const lines=e.target.result.split('\n').filter(l=>l.trim());
+    const sep=lines[0].includes(';')?';':',';
+    const h=lines[0].split(sep).map(v=>v.trim().replace(/"/g,'').toLowerCase());
+    const fd=h.findIndex(v=>v.includes('date')),fv=h.findIndex(v=>v.includes('ville'));
+    if(fd<0||fv<0){toast('❌ Colonnes date/ville manquantes');return;}
+    const today=new Date();
+    chaleurVilles=[];
+    for(let i=1;i<lines.length;i++){
+      const c=lines[i].split(sep).map(v=>v.trim().replace(/"/g,''));
+      const ville=c[fv]?.trim(),ds=c[fd]?.trim();
+      if(!ville||!ds)continue;
       try{
-        const parts = dateStr.split('/');
-        const d = new Date(parts[2], parts[1]-1, parts[0]);
-        const jours = Math.floor((today - d) / 86400000);
-        if(jours > 365) continue;
-        chaleurVilles.push({ville, date:dateStr, jours});
+        const pt=ds.split('/');
+        const d=new Date(pt[2],pt[1]-1,pt[0]);
+        const jours=Math.floor((today-d)/86400000);
+        if(jours>400)continue;
+        chaleurVilles.push({ville,date:ds,jours});
       }catch(e){}
     }
-
     placerChaleur();
     majChips();
     toast(`🔥 ${new Set(chaleurVilles.map(v=>v.ville)).size} villes chargées`);
     fermerImport();
   };
-  reader.readAsText(file, 'utf-8');
+  r.readAsText(file,'utf-8');
 }
 
-function placerChaleur(){
-  layerChaleur.clearLayers();
-  const stats = {};
-  chaleurVilles.forEach(v=>{
-    if(!stats[v.ville]) stats[v.ville] = {nb:0, minJours:9999};
-    stats[v.ville].nb++;
-    if(v.jours < stats[v.ville].minJours) stats[v.ville].minJours = v.jours;
-  });
-
-  Object.entries(stats).forEach(([ville, s])=>{
-    const nom = ville.replace(/\s+/g,' ').trim();
-    // Chercher coordonnées
-    let coord = null;
-    for(const [k,v] of Object.entries(COORDS_CHALEUR)){
-      if(k.toLowerCase()===nom.toLowerCase()||nom.toLowerCase().includes(k.toLowerCase())||k.toLowerCase().includes(nom.toLowerCase())){
-        coord=v; break;
-      }
-    }
-    if(!coord) return;
-
-    const jours = s.minJours;
-    const col = jours<30?'#ff2d55':jours<90?'#ff9f0a':jours<180?'#30d158':'#0a84ff';
-    const rayon = Math.min(6 + s.nb * 1.5, 18);
-
-    const circle = L.circleMarker(coord, {
-      radius: rayon,
-      fillColor: col,
-      color: 'rgba(0,0,0,0.5)',
-      weight: 1,
-      opacity: 0.6,
-      fillOpacity: 0.35,
-    });
-
-    circle.bindTooltip(`🔥 ${ville}<br>${s.nb} visite${s.nb>1?'s':''} · Il y a ${jours}j`, {
-      permanent: false,
-      direction: 'top',
-      className: 'leaflet-tooltip-dark',
-    });
-
-    layerChaleur.addLayer(circle);
-  });
+// ── SCORE FILTER ─────────────────────────────────────────
+function toggleScoreBar(){
+  const b=document.getElementById('scoreBar');
+  b.style.display=b.style.display==='none'?'block':'none';
 }
-function fermerImport(){ document.getElementById('importModal').classList.remove('on'); }
-
-function importerFichier(event, type){
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const lines = e.target.result.split('\n').filter(l=>l.trim());
-    if(lines.length < 2){ toast('❌ Fichier invalide'); return; }
-    const sep = lines[0].includes(';')?';':',';
-    const h = lines[0].split(sep).map(v=>v.trim().replace(/"/g,'').toLowerCase());
-
-    const fi = {
-      adresse:  h.findIndex(v=>v==='adresse'),
-      commune:  h.findIndex(v=>v.includes('commune')),
-      dept:     h.findIndex(v=>v==='dept'||v==='dpt'),
-      locaux:   h.findIndex(v=>v==='locaux'||v.includes('logloc')||v==='nb'),
-      lat:      h.findIndex(v=>v==='lat'||v==='ban_lat'),
-      lon:      h.findIndex(v=>v==='lon'||v==='ban_lon'),
-      couleur:  h.findIndex(v=>v==='couleur'),
-      score:    h.findIndex(v=>v==='score'),
-      operateur:h.findIndex(v=>v==='operateur'),
-      passe:    h.findIndex(v=>v==='passe'),
-      jours:    h.findIndex(v=>v==='jours_depuis_anniv'||v==='jours_anniv'),
-      mesc:     h.findIndex(v=>v.includes('mesc')),
-      annees:   h.findIndex(v=>v==='annees'),
-    };
-
-    let added = 0;
-    for(let i=1;i<lines.length;i++){
-      const c = lines[i].split(sep).map(v=>v.trim().replace(/"/g,''));
-      const lat = parseFloat(c[fi.lat]);
-      const lon = parseFloat(c[fi.lon]);
-      if(isNaN(lat)||isNaN(lon)) continue;
-
-      const adresse = fi.adresse>=0 ? c[fi.adresse] : '';
-      if(!adresse) continue;
-
-      // Éviter les doublons
-      const id = adresse + '_' + lat.toFixed(4) + '_' + lon.toFixed(4);
-      if(points.find(p=>p.id===id)) continue;
-
-      let ptype = type;
-      const op = fi.operateur>=0 ? c[fi.operateur] : '';
-      if(op==='both') ptype='both';
-      else if(op==='sfr') ptype='sfr';
-      else if(type==='orange' && op==='sfr') ptype='sfr';
-
-      const nb = fi.locaux>=0 ? parseInt(c[fi.locaux])||0 : 0;
-      const jda = fi.jours>=0 ? parseInt(c[fi.jours])||0 : 0;
-
-      // Pour anniversaires — filtrer J+1 à J+30
-      if(type==='anniv'){
-        const annees = fi.annees>=0 ? parseInt(c[fi.annees])||0 : 0;
-        if(jda<=0||jda>30) continue;
-        ptype='anniv';
-      }
-
-      points.push({
-        id, adresse,
-        commune:  fi.commune>=0 ? c[fi.commune] : '',
-        dept:     fi.dept>=0    ? c[fi.dept]    : '',
-        locaux:   nb,
-        lat, lon,
-        couleur:  fi.couleur>=0 ? c[fi.couleur] : '',
-        score:    fi.score>=0   ? parseFloat(c[fi.score])||0 : 0,
-        ptype,
-        passe:    fi.passe>=0   ? c[fi.passe]   : '',
-        jours_anniv: jda,
-        mesc:     fi.mesc>=0    ? c[fi.mesc]    : '',
-        note: '', action: '',
-        source: file.name,
-      });
-      added++;
-    }
-
-    placerMarkers();
-    majChips();
-    majPanel();
-    toast(`✅ ${added} points ajoutés`);
-    fermerImport();
-  };
-  reader.readAsText(file, 'utf-8');
-}
-
-// ── MARKERS ───────────────────────────────────────────────
-function getColor(p){
-  if(p.ptype==='both')  return '#ffd700';
-  if(p.ptype==='sfr')   return '#b06cff';
-  if(p.ptype==='anniv'){
-    if(p.jours_anniv<=7)  return '#ff3355';
-    if(p.jours_anniv<=20) return '#ff8c00';
-    return '#00d46a';
-  }
-  // Orange
-  const c=p.couleur;
-  if(c==='red')    return '#ff3355';
-  if(c==='orange') return '#ff8c00';
-  if(c==='blue')   return '#00c8ff';
-  return '#00d46a';
-}
-
-function getSize(p){
-  if(p.ptype==='both') return 18;
-  if(p.locaux>=30) return 18;
-  if(p.locaux>=10) return 14;
-  return 11;
-}
-
-function getLayer(p){
-  if(p.ptype==='both')    return layerBoth;
-  if(p.ptype==='sfr')     return layerSFR;
-  if(p.ptype==='anniv')   return layerAnniv;
-  if(p.ptype==='chaleur') return layerChaleur;
-  return layerOrange;
-}
-
-function placerMarkers(){
-  // Vider les layers
-  [layerOrange, layerSFR, layerBoth, layerAnniv].forEach(l=>l.clearLayers());
-  markers = {};
-
-  points.filter(p=>!p.action||['revoir','verifier'].includes(p.action)).forEach(p=>{
-    const col  = getColor(p);
-    const size = getSize(p);
-    const isAnniv = p.ptype==='anniv';
-
-    const icon = L.divIcon({
-      html: isAnniv
-        ? `<div style="width:${size+4}px;height:${size+4}px;border-radius:50%;background:${col};border:2px solid rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;font-size:8px">🎂</div>`
-        : `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${col};border:2px solid rgba(0,0,0,0.5);box-shadow:0 0 ${p.ptype==='both'?'8px '+col:'4px rgba(0,0,0,0.4)'}"></div>`,
-      className: '',
-      iconSize: [size+(isAnniv?4:0), size+(isAnniv?4:0)],
-      iconAnchor: [(size+(isAnniv?4:0))/2, (size+(isAnniv?4:0))/2],
-    });
-
-    const marker = L.marker([p.lat, p.lon], {icon});
-    marker.on('click', () => ouvrirSheet(p));
-    getLayer(p).addLayer(marker);
-    markers[p.id] = marker;
-  });
-
-  if(!layersOn.orange)  map.removeLayer(layerOrange);  else map.addLayer(layerOrange);
-  if(!layersOn.sfr)     map.removeLayer(layerSFR);     else map.addLayer(layerSFR);
-  if(!layersOn.both)    map.removeLayer(layerBoth);    else map.addLayer(layerBoth);
-  if(!layersOn.anniv)   map.removeLayer(layerAnniv);   else map.addLayer(layerAnniv);
-  if(!layersOn.chaleur) map.removeLayer(layerChaleur); else map.addLayer(layerChaleur);
+function filtrerScore(val){
+  scoreMin=parseInt(val);
+  document.getElementById('scoreVal').textContent=val;
+  placerMarkers();
 }
 
 // ── CHIPS ─────────────────────────────────────────────────
 function majChips(){
-  const nb = t => points.filter(p=>p.ptype===t&&!['done','bad','concurrent','signé'].includes(p.action)).length;
-  const villes = new Set(chaleurVilles.map(v=>v.ville)).size;
-  const chips = [
-    {type:'both',    col:'#ffd700', val:nb('both'),    lbl:'Orange+SFR'},
-    {type:'orange',  col:'#ff8c00', val:nb('orange'),  lbl:'Orange'},
-    {type:'sfr',     col:'#b06cff', val:nb('sfr'),     lbl:'SFR'},
-    {type:'anniv',   col:'#ff6eb4', val:nb('anniv'),   lbl:'Annivers.'},
-    {type:'chaleur', col:'#ff5500', val:villes,         lbl:'Visitées'},
+  const nb=t=>points.filter(p=>p.ptype===t&&!['done','bad','concurrent','signé'].includes(p.action)).length;
+  const nv=new Set(chaleurVilles.map(v=>v.ville)).size;
+  const chips=[
+    {type:'both',col:'#ffd700',val:nb('both'),lbl:'Orange+SFR'},
+    {type:'orange',col:'#ff8c00',val:nb('orange'),lbl:'Orange'},
+    {type:'sfr',col:'#b06cff',val:nb('sfr'),lbl:'SFR'},
+    {type:'anniv',col:'#ff6eb4',val:nb('anniv'),lbl:'Anniv.'},
+    {type:'chaleur',col:'#ff5500',val:nv,lbl:'Visites'},
   ];
-  document.getElementById('chips').innerHTML = chips.map(ch=>`
+  document.getElementById('chips').innerHTML=chips.map(ch=>`
     <div class="chip ${layersOn[ch.type]?'on':''}" onclick="toggleLayer('${ch.type}',this)">
       <div class="chip-dot" style="background:${ch.col}"></div>
       <span class="chip-val" style="color:${ch.col}">${ch.val}</span>
       <span class="chip-lbl">${ch.lbl}</span>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function toggleLayer(type, el){
-  layersOn[type] = !layersOn[type];
-  el.classList.toggle('on', layersOn[type]);
-  const layer = {orange:layerOrange, sfr:layerSFR, both:layerBoth, anniv:layerAnniv, chaleur:layerChaleur}[type];
-  if(layersOn[type]) map.addLayer(layer); else map.removeLayer(layer);
+function toggleLayer(type,el){
+  layersOn[type]=!layersOn[type];
+  el.classList.toggle('on',layersOn[type]);
+  const l=allLayers[type];
+  if(layersOn[type])map.addLayer(l);else map.removeLayer(l);
 }
 
 function majPanel(){
-  const total  = points.filter(p=>!['done','bad','concurrent','signé'].includes(p.action)).length;
-  const traites_n = points.filter(p=>['done','bad','concurrent','signé'].includes(p.action)).length;
-  document.getElementById('panelCount').textContent =
-    `${total} points actifs · ${traites_n} traités`;
+  const total=points.filter(p=>!['done','bad','concurrent','signé'].includes(p.action)).length;
+  const tr=traites.length;
+  document.getElementById('panelCount').textContent=`${total} actifs · ${tr} traités · ${itineraire.length} en route`;
 }
 
 // ── SHEET ─────────────────────────────────────────────────
 function ouvrirSheet(p){
-  selectedPoint = p;
-  const col = getColor(p);
-  const typeLabel = p.ptype==='both'?'⭐ Orange+SFR':p.ptype==='sfr'?'🔴 SFR':p.ptype==='anniv'?'🎂 Anniversaire':'🟠 Orange';
+  selectedPoint=p;
+  portes++;
+  const col=getColor(p);
+  const lbl=p.ptype==='both'?'⭐ Orange+SFR':p.ptype==='sfr'?'🔴 SFR':p.ptype==='anniv'?`🎂 J+${p.jours_anniv}`:
+    p.ptype==='orange'?'🟠 Orange':'📍';
+  document.getElementById('sheetDot').style.background=col;
+  document.getElementById('sheetType').textContent=lbl+(p.score?' · Score '+p.score:'');
+  document.getElementById('sheetAddr').textContent=p.adresse;
+  document.getElementById('sheetSub').textContent=`${p.commune} (${p.dept}) · ${p.locaux} log${p.mesc?' · MESC '+p.mesc:''}`;
+  document.getElementById('sheetNote').value=p.note||'';
 
-  document.getElementById('sheetDot').style.background = col;
-  document.getElementById('sheetType').textContent = typeLabel + (p.score?` · Score ${p.score}`:'') + (p.jours_anniv?` · J+${p.jours_anniv}`:'');
-  document.getElementById('sheetAddr').textContent = p.adresse;
-  document.getElementById('sheetSub').textContent  = `${p.commune} (${p.dept}) · ${p.locaux} logements${p.mesc?' · MESC '+p.mesc:''}`;
-  document.getElementById('sheetNote').value = p.note || '';
+  // Historique immeuble
+  const histo=histoImmeuble[p.id]||[];
+  const hw=document.getElementById('histoWrap');
+  const hi=document.getElementById('histoItems');
+  if(histo.length){
+    hw.style.display='block';
+    hi.innerHTML=histo.slice().reverse().map(h=>`
+      <div class="histo-item">
+        <span class="histo-date">${h.date}</span>
+        <span class="histo-action">${getActionLabel(h.action)} ${h.note?'· '+h.note.substring(0,20):''}</span>
+      </div>`).join('');
+  }else{hw.style.display='none';}
 
   document.getElementById('sheet').classList.add('on');
   document.getElementById('overlay').classList.add('on');
-
-  // Centrer la carte
-  map.setView([p.lat, p.lon], Math.max(map.getZoom(), 14));
+  map.setView([p.lat,p.lon],Math.max(map.getZoom(),14));
 }
 
 function fermerSheet(){
-  // Sauvegarder la note
-  if(selectedPoint){
-    selectedPoint.note = document.getElementById('sheetNote').value.trim();
-  }
+  if(selectedPoint)selectedPoint.note=document.getElementById('sheetNote').value.trim();
   document.getElementById('sheet').classList.remove('on');
   document.getElementById('overlay').classList.remove('on');
-  selectedPoint = null;
+  selectedPoint=null;
 }
 
-function addTag(tag){
-  const inp = document.getElementById('sheetNote');
-  inp.value = (inp.value ? inp.value + ' · ' : '') + tag;
+function getActionLabel(a){
+  return{signé:'🎉 Signé',done:'✅ Prospecté',vide:'🏚️ Vide',concurrent:'🔴 Concurrent',
+    bad:'❌ Mauvaise',revoir:'🔄 À revoir',verifier:'🔍 À vérifier'}[a]||a;
 }
+
+function addTag(tag){const i=document.getElementById('sheetNote');i.value=(i.value?i.value+' · ':'')+tag;}
 
 function action(type){
-  if(!selectedPoint) return;
-  const p = selectedPoint;
-  p.note   = document.getElementById('sheetNote').value.trim();
-  p.action = type;
+  if(!selectedPoint)return;
+  const p=selectedPoint;
+  p.note=document.getElementById('sheetNote').value.trim();
+  p.action=type;
 
-  // Supprimer le marker de la carte (sauf revoir/verifier)
+  // Enregistrer dans l'historique immeuble
+  if(!histoImmeuble[p.id])histoImmeuble[p.id]=[];
+  histoImmeuble[p.id].push({date:new Date().toLocaleDateString('fr'),action:type,note:p.note});
+
+  if(type==='signé'){contrats++;majCompteur();}
+
   if(!['revoir','verifier'].includes(type)){
-    const marker = markers[p.id];
-    if(marker){
-      getLayer(p).removeLayer(marker);
-      delete markers[p.id];
-    }
     traites.push({...p});
+    // Retirer le marker
+    placerMarkers();
   }
 
   fermerSheet();
   majChips();
   majPanel();
 
-  const labels = {
-    'signé':    '🎉 Contrat enregistré !',
-    'done':     '✅ Prospecté — adresse retirée',
-    'vide':     '🏚️ Pas habité — adresse retirée',
-    'concurrent':'🔴 Concurrent — adresse retirée',
-    'bad':      '❌ Mauvaise adresse — retirée',
-    'revoir':   '🔄 À revoir — gardée sur la carte',
-    'verifier': '🔍 À vérifier — gardée sur la carte',
-  };
-  toast(labels[type]||'✅ Action enregistrée');
+  const labels={signé:'🎉 Contrat !',done:'✅ Prospecté',vide:'🏚️ Vide',concurrent:'🔴 Concurrent',
+    bad:'❌ Retirée',revoir:'🔄 À revoir',verifier:'🔍 À vérifier'};
+  toast(labels[type]||'✅ OK');
+}
+
+function majCompteur(){
+  document.getElementById('lcContrats').textContent=contrats;
+  const t=portes>0?(contrats/portes*100).toFixed(1):0;
+  document.getElementById('lcTaux').textContent=t+'%';
 }
 
 function ouvrirMaps(){
-  if(!selectedPoint) return;
-  const p = selectedPoint;
-  const isIOS = /iPhone|iPad/.test(navigator.userAgent);
-  const url = isIOS
-    ? `comgooglemaps://?q=${p.lat},${p.lon}&zoom=18`
-    : `https://maps.google.com/maps?q=${p.lat},${p.lon}`;
-  window.open(url, '_blank');
+  if(!selectedPoint)return;
+  const p=selectedPoint;
+  const isIOS=/iPhone|iPad/.test(navigator.userAgent);
+  window.open(isIOS?`comgooglemaps://?q=${p.lat},${p.lon}&zoom=18`:`https://maps.google.com/maps?q=${p.lat},${p.lon}`,'_blank');
   fermerSheet();
+}
+
+function ajouterItineraire(){
+  if(!selectedPoint)return;
+  const p=selectedPoint;
+  if(!itineraire.find(i=>i.id===p.id)){
+    itineraire.push(p);
+    toast(`🗺️ Ajouté à l'itinéraire (${itineraire.length})`);
+    majPanel();
+  }else{toast('Déjà dans l\'itinéraire');}
+  fermerSheet();
+}
+
+// ── ITINERAIRE ────────────────────────────────────────────
+function ouvrirItineraire(){
+  const el=document.getElementById('itiModal');
+  const list=document.getElementById('itiList');
+  if(!itineraire.length){toast('Aucune adresse dans l\'itinéraire — clique ⋯ puis "Ajouter à l\'itinéraire"');return;}
+  list.innerHTML=itineraire.map((p,i)=>`
+    <div class="iti-item">
+      <div class="iti-num">${i+1}</div>
+      <div style="flex:1">
+        <div class="iti-addr">${p.adresse}</div>
+        <div class="iti-sub">${p.commune} (${p.dept}) · ${p.locaux} log</div>
+      </div>
+      <button onclick="retirerIti(${i})" style="padding:4px 8px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--red);font-size:0.7rem;cursor:pointer">✕</button>
+    </div>`).join('');
+  el.classList.add('on');
+}
+
+function fermerItineraire(){document.getElementById('itiModal').classList.remove('on');}
+
+function retirerIti(idx){
+  itineraire.splice(idx,1);
+  majPanel();
+  ouvrirItineraire();
+}
+
+function viderItineraire(){
+  itineraire=[];
+  majPanel();
+  fermerItineraire();
+  toast('🗑️ Itinéraire vidé');
+}
+
+function lancerItineraire(){
+  if(!itineraire.length)return;
+  const isIOS=/iPhone|iPad/.test(navigator.userAgent);
+  if(isIOS){
+    // Google Maps iOS — waypoints
+    const dest=itineraire[itineraire.length-1];
+    const wps=itineraire.slice(0,-1).map(p=>`${p.lat},${p.lon}`).join('/');
+    const url=`comgooglemaps://?saddr=&daddr=${dest.lat},${dest.lon}${wps?'&waypoints='+wps:''}`;
+    window.open(url,'_blank');
+  }else{
+    // Google Maps web
+    const base='https://www.google.com/maps/dir/';
+    const pts=itineraire.map(p=>`${p.lat},${p.lon}`).join('/');
+    window.open(base+pts,'_blank');
+  }
+  fermerItineraire();
 }
 
 // ── RECHERCHE ─────────────────────────────────────────────
 function rechercher(q){
-  const res = document.getElementById('searchResults');
-  if(!q || q.length < 2){ res.style.display='none'; return; }
-  const found = points.filter(p=>
-    p.adresse.toLowerCase().includes(q.toLowerCase()) ||
-    p.commune.toLowerCase().includes(q.toLowerCase())
-  ).slice(0,8);
-  if(!found.length){ res.style.display='none'; return; }
-  res.style.display = 'block';
-  res.innerHTML = found.map(p=>`
-    <div class="search-result" onclick="volerVers('${p.id}')">
-      <div style="width:8px;height:8px;border-radius:50%;background:${getColor(p)};flex-shrink:0"></div>
-      <div>
-        <div style="font-size:0.8rem;font-weight:600">${p.adresse}</div>
-        <div style="font-size:0.65rem;color:var(--muted);font-family:Space Mono,monospace">${p.commune} (${p.dept}) · ${p.locaux} log</div>
-      </div>
-    </div>
-  `).join('');
+  const res=document.getElementById('searchResults');
+  if(!q||q.length<2){res.style.display='none';return;}
+  const found=points.filter(p=>p.adresse.toLowerCase().includes(q.toLowerCase())||p.commune.toLowerCase().includes(q.toLowerCase())).slice(0,8);
+  if(!found.length){res.style.display='none';return;}
+  res.style.display='block';
+  res.innerHTML=found.map(p=>`
+    <div class="search-result" onclick="volerVers('${p.id.replace(/'/g,"\\'")}')">
+      <div style="width:7px;height:7px;border-radius:50%;background:${getColor(p)};flex-shrink:0"></div>
+      <div><div style="font-size:0.78rem;font-weight:600">${p.adresse}</div>
+      <div style="font-size:0.62rem;color:var(--muted);font-family:Space Mono,monospace">${p.commune} (${p.dept}) · ${p.locaux} log${p.score?' · '+p.score:''}pts</div></div>
+    </div>`).join('');
 }
 
 function volerVers(id){
-  const p = points.find(p=>p.id===id);
-  if(!p) return;
+  const p=points.find(p=>p.id===id);
+  if(!p)return;
   document.getElementById('searchResults').style.display='none';
-  document.getElementById('searchInput').value = p.commune;
-  map.flyTo([p.lat, p.lon], 16, {duration:1.5});
-  setTimeout(()=>ouvrirSheet(p), 1500);
+  document.getElementById('searchInput').value=p.commune;
+  map.flyTo([p.lat,p.lon],16,{duration:1.5});
+  setTimeout(()=>ouvrirSheet(p),1500);
 }
-
-function viderRecherche(){
-  document.getElementById('searchInput').value='';
-  document.getElementById('searchResults').style.display='none';
-}
+function viderRecherche(){document.getElementById('searchInput').value='';document.getElementById('searchResults').style.display='none';}
 
 // ── EXPORT ────────────────────────────────────────────────
-function exporterTout(){
-  const actifs = points.filter(p=>!['done','bad','concurrent','signé'].includes(p.action));
-  if(!actifs.length){ toast('Aucun point actif à exporter'); return; }
-  let csv = 'adresse;commune;dept;locaux;lat;lon;couleur;score;ptype;note;action\n';
-  actifs.forEach(p=>{
-    csv += `${p.adresse};${p.commune};${p.dept};${p.locaux};${p.lat};${p.lon};${p.couleur};${p.score};${p.ptype};${p.note||''};${p.action||''}\n`;
-  });
-  telecharger(csv, `fibremap_actifs_${today()}.csv`);
-  toast(`📤 ${actifs.length} points exportés`);
+function exporterActifs(){
+  const actifs=points.filter(p=>!['done','bad','concurrent','signé'].includes(p.action));
+  if(!actifs.length){toast('Aucun point actif');return;}
+  let csv='adresse;commune;dept;locaux;lat;lon;score;ptype;note;action\n';
+  actifs.forEach(p=>{csv+=`${p.adresse};${p.commune};${p.dept};${p.locaux};${p.lat};${p.lon};${p.score};${p.ptype};${p.note||''};${p.action||''}\n`;});
+  dl(csv,`fibremap_actifs_${today()}.csv`);toast(`📤 ${actifs.length} actifs exportés`);
 }
-
 function exporterTraites(){
-  if(!traites.length){ toast('Aucun point traité'); return; }
-  let csv = 'adresse;commune;dept;locaux;action;note;ptype\n';
-  traites.forEach(p=>{
-    csv += `${p.adresse};${p.commune};${p.dept};${p.locaux};${p.action};${p.note||''};${p.ptype}\n`;
-  });
-  telecharger(csv, `fibremap_traites_${today()}.csv`);
-  toast(`📤 ${traites.length} traités exportés`);
+  if(!traites.length){toast('Aucun point traité');return;}
+  let csv='adresse;commune;dept;locaux;action;note;ptype\n';
+  traites.forEach(p=>{csv+=`${p.adresse};${p.commune};${p.dept};${p.locaux};${p.action};${p.note||''};${p.ptype}\n`;});
+  dl(csv,`fibremap_traites_${today()}.csv`);toast(`📤 ${traites.length} traités exportés`);
 }
-
-function confirmerNettoyage(){
-  if(!confirm(`Supprimer définitivement les ${traites.length} points traités ?`)) return;
-  traites = [];
-  majPanel();
-  toast('🗑️ Points traités supprimés');
-}
-
-function telecharger(csv, nom){
-  const url = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv'}));
+function dl(csv,nom){
+  const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv'}));
   Object.assign(document.createElement('a'),{href:url,download:nom}).click();
   URL.revokeObjectURL(url);
 }
-
-function today(){
-  return new Date().toISOString().split('T')[0];
-}
-
-function toggleLegend(){
-  const l = document.querySelector('.legend');
-  l.style.display = l.style.display==='none'?'block':'none';
-}
+function today(){return new Date().toISOString().split('T')[0];}
+function toggleLegend(){const l=document.getElementById('legend');l.style.display=l.style.display==='none'?'block':'none';}
 
 // ── TOAST ─────────────────────────────────────────────────
 let toastTimer;
 function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('on');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('on'), 3000);
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),3000);
 }
 
-// Fermer recherche en cliquant sur la carte
-map.on('click', ()=>{
-  document.getElementById('searchResults').style.display='none';
-});
+map.on('click',()=>{document.getElementById('searchResults').style.display='none';});
 }); // end window.load
 </script>
 </body>

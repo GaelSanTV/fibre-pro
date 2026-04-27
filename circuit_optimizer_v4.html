@@ -265,6 +265,16 @@
   <header>
     <div class="logo">Circuit<span>Pro</span></div>
     <div class="badge">FIBRE BOUYGUES · VALENCE</div>
+    <div style="display:flex;gap:8px;margin-left:auto;align-items:center">
+      <!-- Compteur live -->
+      <div id="liveCounter" style="display:none;background:rgba(0,212,106,0.1);border:1px solid rgba(0,212,106,0.3);border-radius:8px;padding:5px 10px;text-align:center;cursor:pointer" onclick="toggleCounter()">
+        <div style="font-family:Space Mono,monospace;font-size:1rem;font-weight:700;color:var(--green);line-height:1" id="lcContrats">0</div>
+        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em">Contrats</div>
+        <div style="font-family:Space Mono,monospace;font-size:0.68rem;color:var(--accent)" id="lcTaux">0%</div>
+      </div>
+      <!-- Plein écran -->
+      <button onclick="toggleFullscreen()" style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted);font-size:0.75rem;cursor:pointer" title="Plein écran">⛶</button>
+    </div>
   </header>
 
   <div class="stats-bar">
@@ -811,7 +821,34 @@ function detecterZones(){
 }
 
 // ── DÉPART ────────────────────────────────────────────────
-function setDepart(mode,btn){
+// ── PLEIN ÉCRAN ───────────────────────────────────────────
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen?.();
+  }else{
+    document.exitFullscreen?.();
+  }
+}
+
+// ── COMPTEUR LIVE ─────────────────────────────────────────
+let lcContrats = 0, lcPortes = 0;
+function majCompteurLive(type){
+  const el = document.getElementById('liveCounter');
+  if(el) el.style.display = 'block';
+  if(type==='signe') lcContrats++;
+  lcPortes++;
+  document.getElementById('lcContrats').textContent = lcContrats;
+  const taux = lcPortes>0?(lcContrats/lcPortes*100).toFixed(1):0;
+  document.getElementById('lcTaux').textContent = taux+'%';
+}
+function toggleCounter(){
+  // Reset compteur
+  if(confirm('Remettre le compteur à zéro ?')){
+    lcContrats=0;lcPortes=0;
+    document.getElementById('lcContrats').textContent='0';
+    document.getElementById('lcTaux').textContent='0%';
+  }
+}
   if(btn){document.querySelectorAll('.depart-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
   const inputs=document.getElementById('departInputs');
   const villeSearch=document.getElementById('departVilleSearch');
@@ -1402,6 +1439,7 @@ function confirmerAction(type){
   const adresse = menuAdresse;
   const card = menuCard;
   fermerMenu();
+  majCompteurLive(type);
 
   if(type === 'revoir'){
     // Marquer à revoir — reste dans le circuit mais signalé

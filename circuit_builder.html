@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>CircuitBuilder — Créateur de circuits vendeurs</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+:root{--bg:#09090f;--surface:#111118;--surface2:#16161f;--border:#1f1f2e;--border2:#2a2a3e;--blue:#00c8ff;--green:#00d46a;--red:#ff3355;--gold:#ffd700;--orange:#ff8c00;--purple:#b06cff;--text:#eeeeff;--muted:#5555aa;}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;gap:12px;padding:12px 20px;background:rgba(9,9,15,0.98);border-bottom:1px solid var(--border);flex-shrink:0;z-index:500;}
+.logo{font-family:'Space Mono',monospace;font-size:1rem;font-weight:700;color:var(--gold);}
+.logo span{color:var(--text);}
+.hdr-center{flex:1;display:flex;align-items:center;gap:10px;}
+.vendor-select{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:8px 14px;font-family:'Syne',sans-serif;font-size:0.85rem;outline:none;flex:1;max-width:200px;}
+.btn{padding:8px 16px;border-radius:8px;border:none;font-family:'Syne',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.15s;}
+.btn:active{transform:scale(0.97);}
+.btn-primary{background:var(--green);color:#000;}
+.btn-blue{background:var(--blue);color:#000;}
+.btn-gold{background:var(--gold);color:#000;}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--muted);}
+input[type=file]{display:none;}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:340px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--surface);overflow:hidden;}
+.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sidebar-title{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;}
+.search-input{width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.82rem;outline:none;margin-bottom:8px;}
+.search-input:focus{border-color:var(--blue);}
+.filters{display:flex;gap:6px;flex-wrap:wrap;}
+.filter-btn{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.68rem;cursor:pointer;font-family:'Syne',sans-serif;}
+.filter-btn.on{background:var(--blue);color:#000;border-color:var(--blue);font-weight:700;}
+
+/* ADRESSE LIST */
+.addr-list{flex:1;overflow-y:auto;padding:8px;}
+.addr-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);margin-bottom:6px;cursor:pointer;transition:all 0.15s;}
+.addr-item:hover{border-color:var(--blue);}
+.addr-item.selected{border-color:var(--green);background:rgba(0,212,106,0.06);}
+.addr-item.in-circuit{border-color:var(--gold);background:rgba(255,215,0,0.06);}
+.addr-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.addr-info{flex:1;min-width:0;}
+.addr-name{font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.addr-sub{font-size:0.65rem;color:var(--muted);font-family:'Space Mono',monospace;margin-top:1px;}
+.addr-score{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--blue);flex-shrink:0;}
+.addr-add{padding:4px 8px;border-radius:5px;border:1px solid var(--green);background:rgba(0,212,106,0.1);color:var(--green);font-size:0.7rem;cursor:pointer;flex-shrink:0;}
+.addr-add.added{border-color:var(--gold);background:rgba(255,215,0,0.1);color:var(--gold);}
+.count-info{font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--muted);padding:6px 12px;border-bottom:1px solid var(--border);}
+
+/* MAP */
+#map{flex:1;z-index:1;}
+.leaflet-tile-pane{filter:brightness(0.5) saturate(0.25) hue-rotate(215deg);}
+.leaflet-control-zoom{border:1px solid var(--border2)!important;background:var(--surface)!important;}
+.leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border-bottom:1px solid var(--border2)!important;line-height:26px!important;}
+
+/* CIRCUIT PANEL */
+.circuit-panel{position:fixed;right:0;top:60px;bottom:0;width:320px;background:rgba(9,9,15,0.97);border-left:1px solid var(--border);z-index:300;display:flex;flex-direction:column;transform:translateX(100%);transition:transform 0.3s ease;backdrop-filter:blur(20px);}
+.circuit-panel.on{transform:translateX(0);}
+.cp-header{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.cp-title{font-family:'Space Mono',monospace;font-size:0.8rem;font-weight:700;color:var(--gold);margin-bottom:2px;}
+.cp-sub{font-size:0.65rem;color:var(--muted);}
+.cp-list{flex:1;overflow-y:auto;padding:8px;}
+.cp-item{display:flex;align-items:center;gap:8px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);margin-bottom:5px;}
+.cp-num{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--muted);min-width:20px;text-align:center;}
+.cp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cp-info{flex:1;min-width:0;}
+.cp-name{font-size:0.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cp-sub2{font-size:0.62rem;color:var(--muted);}
+.cp-remove{padding:3px 7px;border-radius:5px;border:1px solid rgba(255,51,85,0.3);background:transparent;color:var(--red);font-size:0.65rem;cursor:pointer;flex-shrink:0;}
+.cp-actions{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:8px;}
+.cp-stat{display:flex;justify-content:space-between;font-size:0.72rem;margin-bottom:8px;}
+.cp-stat-lbl{color:var(--muted);}
+.cp-stat-val{font-family:'Space Mono',monospace;color:var(--text);}
+
+/* VENDOR CARDS */
+.vendor-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;}
+.vendor-modal.on{display:flex;}
+.vendor-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px;width:100%;max-width:500px;}
+.vm-title{font-size:1rem;font-weight:700;color:var(--gold);margin-bottom:16px;}
+.vm-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.vm-vendor{background:var(--surface2);border:2px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all 0.15s;text-align:center;}
+.vm-vendor:hover,.vm-vendor.on{border-color:var(--gold);}
+.vm-vendor-name{font-size:0.88rem;font-weight:700;margin-bottom:2px;}
+.vm-vendor-stats{font-size:0.65rem;color:var(--muted);font-family:'Space Mono',monospace;}
+.vm-input{width:100%;padding:10px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.85rem;outline:none;margin-bottom:10px;}
+.vm-input:focus{border-color:var(--gold);}
+.vm-close{width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Syne',sans-serif;cursor:pointer;margin-top:6px;}
+
+/* TOAST */
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:7px 14px;border-radius:8px;font-size:0.75rem;z-index:9999;opacity:0;transition:all 0.25s;white-space:nowrap;pointer-events:none;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.leaflet-tooltip{background:rgba(9,9,15,0.95)!important;border:1px solid var(--border2)!important;color:var(--text)!important;font-family:'Syne',sans-serif!important;font-size:0.7rem!important;padding:5px 9px!important;border-radius:6px!important;box-shadow:none!important;}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">Circuit<span>Builder</span></div>
+  <div class="hdr-center">
+    <select class="vendor-select" id="vendorSelect">
+      <option value="">Sélectionner un vendeur</option>
+    </select>
+    <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">📂 Import CSV</button>
+    <input type="file" id="fileInput" accept=".csv" onchange="importerCSV(event)">
+    <button class="btn btn-secondary" onclick="toggleCircuit()">🗺️ Circuit (<span id="circuitCount">0</span>)</button>
+    <button class="btn btn-gold" onclick="ouvrirVendeurs()">👥 Vendeurs</button>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-blue" onclick="optimiserCircuit()">⚡ Optimiser</button>
+    <button class="btn btn-primary" onclick="exporterCircuit()">📤 Exporter</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Adresses disponibles</div>
+      <input class="search-input" id="sideSearch" placeholder="🔍 Rechercher..." oninput="filtrerSidebar(this.value)">
+      <div class="filters" id="filters">
+        <button class="filter-btn on" onclick="setFilter('',this)">Toutes</button>
+        <button class="filter-btn" onclick="setFilter('orange',this)">🟠 Orange</button>
+        <button class="filter-btn" onclick="setFilter('sfr',this)">🔴 SFR</button>
+        <button class="filter-btn" onclick="setFilter('both',this)">⭐ Both</button>
+        <button class="filter-btn" onclick="setFilter('anniv',this)">🎂 Anniv</button>
+      </div>
+    </div>
+    <div class="count-info" id="sideCount">—</div>
+    <div class="addr-list" id="sideList"></div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map"></div>
+</div>
+
+<!-- CIRCUIT PANEL -->
+<div class="circuit-panel" id="circuitPanel">
+  <div class="cp-header">
+    <div class="cp-title">🗺️ Circuit — <span id="cpVendeur">—</span></div>
+    <div class="cp-sub" id="cpStats">0 adresses · 0 locaux</div>
+  </div>
+  <div class="cp-list" id="cpList"></div>
+  <div class="cp-actions">
+    <div class="cp-stat">
+      <span class="cp-stat-lbl">Adresses</span><span class="cp-stat-val" id="cpNb">0</span>
+    </div>
+    <div class="cp-stat">
+      <span class="cp-stat-lbl">Locaux total</span><span class="cp-stat-val" id="cpLocaux">0</span>
+    </div>
+    <div class="cp-stat">
+      <span class="cp-stat-lbl">Score moyen</span><span class="cp-stat-val" id="cpScore">—</span>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="exporterCircuit()">📤 Exporter CSV vendeur</button>
+    <button class="btn btn-secondary" style="width:100%" onclick="viderCircuit()">🗑️ Vider le circuit</button>
+  </div>
+</div>
+
+<!-- VENDOR MODAL -->
+<div class="vendor-modal" id="vendorModal">
+  <div class="vendor-card">
+    <div class="vm-title">👥 Gestion des vendeurs</div>
+    <div class="vm-grid" id="vendorGrid"></div>
+    <input class="vm-input" id="newVendorName" placeholder="Nom du nouveau vendeur...">
+    <button class="btn btn-gold" style="width:100%" onclick="ajouterVendeur()">＋ Ajouter vendeur</button>
+    <button class="vm-close" onclick="fermerVendeurs()">✕ Fermer</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────
+let adresses = [];
+let circuit  = [];
+let vendeurs = JSON.parse(localStorage.getItem('vendeurs')||'["Gaël","Vendeur 2","Vendeur 3"]');
+let vendeurActuel = vendeurs[0]||'';
+let filterActuel = '';
+let markers = {};
+
+// Init vendeurs
+function initVendeurs(){
+  const sel = document.getElementById('vendorSelect');
+  sel.innerHTML = vendeurs.map(v=>`<option value="${v}">${v}</option>`).join('');
+  sel.value = vendeurActuel;
+  sel.onchange = ()=>{ vendeurActuel=sel.value; document.getElementById('cpVendeur').textContent=vendeurActuel; };
+  document.getElementById('cpVendeur').textContent = vendeurActuel;
+}
+initVendeurs();
+
+function ajouterVendeur(){
+  const nom = document.getElementById('newVendorName').value.trim();
+  if(!nom)return;
+  vendeurs.push(nom);
+  localStorage.setItem('vendeurs', JSON.stringify(vendeurs));
+  document.getElementById('newVendorName').value='';
+  initVendeurs();
+  afficherVendeurGrid();
+  toast(`✅ Vendeur ${nom} ajouté`);
+}
+
+function ouvrirVendeurs(){document.getElementById('vendorModal').classList.add('on');afficherVendeurGrid();}
+function fermerVendeurs(){document.getElementById('vendorModal').classList.remove('on');}
+function afficherVendeurGrid(){
+  document.getElementById('vendorGrid').innerHTML = vendeurs.map((v,i)=>`
+    <div class="vm-vendor ${v===vendeurActuel?'on':''}" onclick="choisirVendeur('${v}',this)">
+      <div class="vm-vendor-name">${v}</div>
+      <div class="vm-vendor-stats">Circuit actuel: ${circuit.length} adresses</div>
+    </div>`).join('');
+}
+function choisirVendeur(v,el){
+  vendeurActuel=v;
+  document.querySelectorAll('.vm-vendor').forEach(e=>e.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('vendorSelect').value=v;
+  document.getElementById('cpVendeur').textContent=v;
+}
+
+// ── MAP ───────────────────────────────────────────────────
+window.addEventListener('load', function(){
+const map = L.map('map',{zoomControl:false,attributionControl:false}).setView([45.1,5.7],8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+L.control.zoom({position:'bottomright'}).addTo(map);
+
+const layerAll   = L.layerGroup().addTo(map);
+const layerCirc  = L.layerGroup().addTo(map);
+const polyCirc   = L.layerGroup().addTo(map);
+
+function getColor(p){
+  if(p.ptype==='both')  return '#ffd700';
+  if(p.ptype==='sfr')   return '#b06cff';
+  if(p.ptype==='anniv') return '#ff6eb4';
+  const c=p.couleur;
+  if(c==='red')    return '#ff3355';
+  if(c==='orange') return '#ff8c00';
+  if(c==='blue')   return '#00c8ff';
+  return '#00d46a';
+}
+
+function placerTous(){
+  layerAll.clearLayers(); markers={};
+  adresses.forEach(a=>{
+    const col=getColor(a);
+    const inCirc=circuit.find(c=>c.id===a.id);
+    const sz=inCirc?16:a.locaux>=10?13:10;
+    const icon=L.divIcon({
+      html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${col};border:${inCirc?'3px solid #ffd700':'2px solid rgba(0,0,0,0.5)'};cursor:pointer"></div>`,
+      className:'',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]
+    });
+    const m=L.marker([a.lat,a.lon],{icon});
+    m.bindTooltip(`${a.adresse}<br>${a.commune} · ${a.locaux} log`,{direction:'top'});
+    m.on('click',()=>toggleCircuit_point(a));
+    layerAll.addLayer(m);
+    markers[a.id]=m;
+  });
+  tracerRoute();
+}
+
+function tracerRoute(){
+  polyCirc.clearLayers();
+  if(circuit.length<2)return;
+  const pts=circuit.map(a=>[a.lat,a.lon]);
+  L.polyline(pts,{color:'rgba(0,200,255,0.5)',weight:2,dashArray:'6,4'}).addTo(polyCirc);
+  circuit.forEach((a,i)=>{
+    L.divIcon({html:`<div style="background:rgba(0,200,255,0.8);color:#000;font-family:Space Mono,monospace;font-size:0.6rem;font-weight:700;padding:2px 4px;border-radius:3px">${i+1}</div>`,className:''});
+  });
+}
+
+// ── IMPORT ────────────────────────────────────────────────
+function importerCSV(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const lines=e.target.result.split('\n').filter(l=>l.trim());
+    const sep=lines[0].includes(';')?';':',';
+    const h=lines[0].split(sep).map(v=>v.trim().replace(/"/g,'').toLowerCase());
+    const fi={
+      adresse:h.findIndex(v=>v==='adresse'),commune:h.findIndex(v=>v.includes('commune')),
+      dept:h.findIndex(v=>v==='dept'||v==='dpt'),locaux:h.findIndex(v=>v==='locaux'||v.includes('logloc')||v==='nb'),
+      lat:h.findIndex(v=>v==='lat'||v==='ban_lat'),lon:h.findIndex(v=>v==='lon'||v==='ban_lon'),
+      couleur:h.findIndex(v=>v==='couleur'),score:h.findIndex(v=>v==='score'),
+      operateur:h.findIndex(v=>v==='operateur'),
+    };
+    adresses=[];
+    for(let i=1;i<lines.length;i++){
+      const c=lines[i].split(sep).map(v=>v.trim().replace(/"/g,''));
+      const lat=parseFloat(c[fi.lat]),lon=parseFloat(c[fi.lon]);
+      if(isNaN(lat)||isNaN(lon))continue;
+      const adr=fi.adresse>=0?c[fi.adresse]:'';
+      if(!adr)continue;
+      const op=fi.operateur>=0?c[fi.operateur]:'';
+      let ptype=op==='both'?'both':op==='sfr'?'sfr':'orange';
+      adresses.push({
+        id:adr+'_'+lat.toFixed(4)+'_'+lon.toFixed(4),adresse:adr,
+        commune:fi.commune>=0?c[fi.commune]:'',dept:fi.dept>=0?c[fi.dept]:'',
+        locaux:fi.locaux>=0?parseInt(c[fi.locaux])||0:0,lat,lon,
+        couleur:fi.couleur>=0?c[fi.couleur]:'',score:fi.score>=0?parseFloat(c[fi.score])||0:0,
+        ptype,
+      });
+    }
+    placerTous();
+    afficherSidebar();
+    toast(`✅ ${adresses.length} adresses chargées`);
+  };
+  r.readAsText(file,'utf-8');
+}
+
+// ── CIRCUIT ───────────────────────────────────────────────
+function toggleCircuit_point(a){
+  const idx=circuit.findIndex(c=>c.id===a.id);
+  if(idx>=0){circuit.splice(idx,1);}else{circuit.push(a);}
+  document.getElementById('circuitCount').textContent=circuit.length;
+  afficherSidebar();
+  afficherCircuitPanel();
+  placerTous();
+}
+
+function toggleCircuit(){
+  const p=document.getElementById('circuitPanel');
+  p.classList.toggle('on');
+  afficherCircuitPanel();
+}
+
+function afficherCircuitPanel(){
+  const list=document.getElementById('cpList');
+  list.innerHTML=circuit.map((a,i)=>`
+    <div class="cp-item">
+      <div class="cp-num">${i+1}</div>
+      <div class="cp-dot" style="background:${getColor(a)}"></div>
+      <div class="cp-info">
+        <div class="cp-name">${a.adresse}</div>
+        <div class="cp-sub2">${a.commune} · ${a.locaux} log${a.score?' · '+a.score:''}pts</div>
+      </div>
+      <button class="cp-remove" onclick="retirerCircuit(${i})">✕</button>
+    </div>`).join('');
+  const total=circuit.reduce((s,a)=>s+a.locaux,0);
+  const moy=circuit.length?Math.round(circuit.reduce((s,a)=>s+a.score,0)/circuit.length):0;
+  document.getElementById('cpNb').textContent=circuit.length;
+  document.getElementById('cpLocaux').textContent=total;
+  document.getElementById('cpScore').textContent=moy+'pts';
+  document.getElementById('cpStats').textContent=`${circuit.length} adresses · ${total} locaux`;
+}
+
+function retirerCircuit(idx){
+  circuit.splice(idx,1);
+  document.getElementById('circuitCount').textContent=circuit.length;
+  afficherCircuitPanel();
+  afficherSidebar();
+  placerTous();
+}
+
+function viderCircuit(){circuit=[];document.getElementById('circuitCount').textContent=0;afficherCircuitPanel();afficherSidebar();placerTous();toast('🗑️ Circuit vidé');}
+
+// ── OPTIMISER ─────────────────────────────────────────────
+function optimiserCircuit(){
+  if(circuit.length<3){toast('Ajoutez au moins 3 adresses');return;}
+  // Nearest neighbor depuis la première adresse
+  const result=[circuit[0]];
+  const rem=[...circuit.slice(1)];
+  let pos=circuit[0];
+  while(rem.length){
+    let mi=0,md=Infinity;
+    rem.forEach((a,i)=>{
+      const d=hav(pos.lat,pos.lon,a.lat,a.lon);
+      const de=a.ptype==='both'||a.locaux>=10?d*0.7:d;
+      if(de<md){md=de;mi=i;}
+    });
+    result.push(rem[mi]);pos=rem[mi];rem.splice(mi,1);
+  }
+  circuit=result;
+  afficherCircuitPanel();
+  tracerRoute();
+  toast('⚡ Circuit optimisé !');
+}
+
+function hav(lat1,lon1,lat2,lon2){
+  const R=6371,dL=(lat2-lat1)*Math.PI/180,dG=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dG/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// ── EXPORT ────────────────────────────────────────────────
+function exporterCircuit(){
+  if(!circuit.length){toast('Circuit vide');return;}
+  if(!vendeurActuel){toast('Sélectionnez un vendeur');return;}
+  let csv='adresse;commune;dept;locaux;lat;lon;couleur;score;ptype\n';
+  circuit.forEach(a=>{csv+=`${a.adresse};${a.commune};${a.dept};${a.locaux};${a.lat};${a.lon};${a.couleur||''};${a.score||0};${a.ptype||'orange'}\n`;});
+  const date=new Date().toISOString().split('T')[0];
+  const nom=vendeurActuel.replace(/\s/g,'_');
+  const url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv'}));
+  Object.assign(document.createElement('a'),{href:url,download:`circuit_${nom}_${date}.csv`}).click();
+  URL.revokeObjectURL(url);
+  toast(`📤 Circuit de ${circuit.length} adresses exporté pour ${vendeurActuel} !`);
+}
+
+// ── SIDEBAR ───────────────────────────────────────────────
+let filterActuel='',sideSearch='';
+function setFilter(f,btn){filterActuel=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');afficherSidebar();}
+function filtrerSidebar(q){sideSearch=q;afficherSidebar();}
+
+function afficherSidebar(){
+  let list=[...adresses];
+  if(filterActuel)list=list.filter(a=>a.ptype===filterActuel);
+  if(sideSearch)list=list.filter(a=>a.adresse.toLowerCase().includes(sideSearch.toLowerCase())||a.commune.toLowerCase().includes(sideSearch.toLowerCase()));
+  list.sort((a,b)=>b.score-a.score);
+  document.getElementById('sideCount').textContent=`${list.length} adresses · ${circuit.length} dans le circuit`;
+  const el=document.getElementById('sideList');
+  el.innerHTML=list.map(a=>{
+    const inC=circuit.find(c=>c.id===a.id);
+    const col=getColor(a);
+    return`<div class="addr-item ${inC?'in-circuit':''}" onclick="toggleCircuit_point(${JSON.stringify(a).replace(/"/g,"'")})">
+      <div class="addr-dot" style="background:${col}"></div>
+      <div class="addr-info">
+        <div class="addr-name">${a.adresse}</div>
+        <div class="addr-sub">${a.commune} (${a.dept}) · ${a.locaux} log</div>
+      </div>
+      <div class="addr-score">${a.score||0}</div>
+      <button class="addr-add ${inC?'added':''}">${inC?'✓ Ajouté':'＋'}</button>
+    </div>`;
+  }).join('');
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+let toastTimer;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),3000);}
+
+}); // end window.load
+
+function toggleCircuit(){
+  const p=document.getElementById('circuitPanel');
+  p.classList.toggle('on');
+}
+</script>
+</body>
+</html>
