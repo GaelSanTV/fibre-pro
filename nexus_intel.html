@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="INTEL">
+<meta name="theme-color" content="#080400">
+<title>NEXUS·INTEL — Conseil Prospection</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+:root {
+  --void:#060402;--deep:#0c0804;--panel:#120e08;--glass:#1a1408;
+  --border:#2a1e08;--border2:#3a2a0a;
+  --fire:#ff6600;--fire2:#ff4400;--fire3:#ff8800;--ember:#ffaa00;
+  --hot:#ff3300;--warm:#ff9900;--cool:#ffcc00;
+  --green:#00ff88;--cyan:#00ccff;--red:#ff2244;
+  --text:#fff8ee;--muted:#664422;--dim:#0d0a06;
+  --glow:rgba(255,102,0,0.15);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--void);}
+body{font-family:'Rajdhani',sans-serif;color:var(--text);display:flex;flex-direction:column;}
+
+/* ── NOISE TEXTURE ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.4;
+}
+
+/* ── GRID ── */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(255,102,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,102,0,0.03) 1px,transparent 1px);
+  background-size:32px 32px;pointer-events:none;z-index:0;
+}
+
+/* ── HEADER ── */
+.hdr{
+  position:relative;z-index:100;flex-shrink:0;height:52px;
+  display:flex;align-items:stretch;
+  background:rgba(6,4,2,0.98);
+  border-bottom:2px solid var(--fire);
+  box-shadow:0 2px 30px rgba(255,102,0,0.2),0 0 60px rgba(255,102,0,0.05);
+}
+.hdr::after{content:'';position:absolute;bottom:-4px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--fire3),transparent);opacity:0.5;}
+.hdr-brand{display:flex;align-items:center;gap:10px;padding:0 16px;border-right:1px solid var(--border2);flex-shrink:0;}
+.brand-name{font-family:'Chakra Petch',sans-serif;font-size:1.1rem;font-weight:700;color:var(--fire);letter-spacing:0.08em;text-shadow:0 0 20px var(--fire),0 0 40px rgba(255,102,0,0.3);}
+.brand-sub{font-size:0.42rem;color:var(--muted);letter-spacing:0.25em;font-family:'Chakra Petch',sans-serif;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--fire);box-shadow:0 0 8px var(--fire);animation:liveblink 1s infinite;}
+@keyframes liveblink{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(0.7);}}
+
+/* IMPORT ZONE */
+.import-zone{display:flex;align-items:center;gap:0;flex:1;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.imp-btn{height:100%;padding:0 12px;border-right:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:0.65rem;font-weight:600;cursor:pointer;letter-spacing:0.08em;transition:all 0.2s;white-space:nowrap;border-top:none;border-bottom:none;border-left:none;}
+.imp-btn:hover,.imp-btn:active{color:var(--fire);background:rgba(255,102,0,0.06);}
+.imp-btn.loaded{color:var(--ember);border-bottom:2px solid var(--ember);}
+input[type=file]{display:none;}
+
+.hdr-right{display:flex;align-items:center;padding:0 12px;gap:8px;flex-shrink:0;border-left:1px solid var(--border2);}
+.hdr-time{font-family:'Chakra Petch',sans-serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.08em;text-align:right;}
+.hdr-time span{color:var(--fire3);display:block;font-size:0.55rem;}
+
+/* ── MAIN LAYOUT ── */
+.main{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;padding:2px;overflow:hidden;position:relative;z-index:1;}
+
+/* ── PANELS ── */
+.panel{background:rgba(12,8,4,0.95);border:1px solid var(--border);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--fire2),var(--fire3),var(--ember));}
+.panel-hdr{display:flex;align-items:center;gap:8px;padding:8px 12px 6px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.panel-title{font-family:'Chakra Petch',sans-serif;font-size:0.58rem;font-weight:700;letter-spacing:0.2em;color:var(--fire3);}
+.panel-badge{margin-left:auto;font-family:'Chakra Petch',sans-serif;font-size:0.55rem;color:var(--muted);letter-spacing:0.1em;}
+.panel-body{flex:1;overflow-y:auto;padding:8px;}
+
+/* ── PANEL 1 — CIBLES PRIORITAIRES ── */
+.target-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;margin-bottom:4px;
+  background:rgba(255,102,0,0.04);
+  border:1px solid var(--border);
+  cursor:pointer;transition:all 0.15s;
+  position:relative;overflow:hidden;
+}
+.target-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+.target-item.s1::before{background:var(--fire);}
+.target-item.s2::before{background:var(--warm);}
+.target-item.s3::before{background:var(--cool);}
+.target-item:hover{background:rgba(255,102,0,0.08);border-color:var(--border2);}
+.target-item:active{transform:scale(0.99);}
+.t-rank{font-family:'Chakra Petch',sans-serif;font-size:0.9rem;font-weight:700;min-width:24px;line-height:1;}
+.t-info{flex:1;min-width:0;}
+.t-addr{font-size:0.72rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:0.02em;}
+.t-meta{font-size:0.58rem;color:var(--muted);margin-top:2px;letter-spacing:0.04em;}
+.t-tags{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;}
+.t-tag{padding:1px 5px;font-size:0.48rem;letter-spacing:0.06em;font-family:'Chakra Petch',sans-serif;border:1px solid;}
+.t-score{text-align:right;flex-shrink:0;}
+.t-score-val{font-family:'Chakra Petch',sans-serif;font-size:1.1rem;font-weight:700;line-height:1;}
+.t-score-lbl{font-size:0.45rem;color:var(--muted);letter-spacing:0.12em;}
+
+/* ── PANEL 2 — ANNIVERSAIRES ── */
+.anniv-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;margin-bottom:4px;
+  border:1px solid var(--border);
+  cursor:pointer;transition:all 0.15s;
+}
+.anniv-item.crit{background:rgba(255,34,68,0.06);border-color:rgba(255,34,68,0.3);}
+.anniv-item.urg{background:rgba(255,153,0,0.06);border-color:rgba(255,153,0,0.3);}
+.anniv-item.ok{background:rgba(0,255,136,0.04);border-color:rgba(0,255,136,0.2);}
+.a-jda{font-family:'Chakra Petch',sans-serif;font-size:1.4rem;font-weight:700;line-height:1;min-width:50px;text-align:center;}
+.a-jda span{display:block;font-size:0.42rem;color:var(--muted);letter-spacing:0.1em;font-family:'Rajdhani',sans-serif;}
+.a-info{flex:1;min-width:0;}
+.a-addr{font-size:0.72rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.a-meta{font-size:0.58rem;color:var(--muted);margin-top:2px;}
+.a-type{font-family:'Chakra Petch',sans-serif;font-size:0.55rem;padding:2px 6px;border:1px solid;}
+.a-urgence{font-size:0.55rem;font-family:'Chakra Petch',sans-serif;text-align:right;}
+
+/* ── PANEL 3 — CONSEIL IA ── */
+.conseil-wrap{display:flex;flex-direction:column;height:100%;}
+.conseil-msgs{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.c-msg{padding:8px 10px;font-size:0.68rem;line-height:1.6;letter-spacing:0.02em;border-radius:2px;}
+.c-msg.ia{background:rgba(255,102,0,0.06);border:1px solid rgba(255,102,0,0.2);color:var(--fire3);}
+.c-msg.user{background:rgba(255,255,255,0.04);border:1px solid var(--border2);color:var(--text);align-self:flex-end;max-width:90%;}
+.c-msg.sys{background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.2);color:var(--ember);font-size:0.6rem;text-align:center;letter-spacing:0.06em;font-family:'Chakra Petch',sans-serif;}
+.c-typing{display:flex;gap:3px;padding:8px 10px;background:rgba(255,102,0,0.06);border:1px solid rgba(255,102,0,0.2);}
+.c-typing span{width:5px;height:5px;border-radius:50%;background:var(--fire);animation:cdot 1.4s infinite;}
+.c-typing span:nth-child(2){animation-delay:0.2s;}
+.c-typing span:nth-child(3){animation-delay:0.4s;}
+@keyframes cdot{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+.conseil-quick{padding:6px 8px;display:flex;gap:4px;flex-wrap:wrap;border-top:1px solid var(--border);flex-shrink:0;}
+.cq{padding:3px 8px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-size:0.55rem;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:600;letter-spacing:0.06em;transition:all 0.15s;}
+.cq:active{border-color:var(--fire);color:var(--fire);}
+.conseil-input-row{padding:6px 8px;border-top:1px solid var(--border);display:flex;gap:6px;flex-shrink:0;}
+.c-input{flex:1;padding:7px 10px;background:rgba(255,102,0,0.04);border:1px solid var(--border2);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:0.72rem;outline:none;letter-spacing:0.03em;}
+.c-input:focus{border-color:var(--fire3);}
+.c-input::placeholder{color:var(--muted);}
+.c-send{padding:7px 12px;background:var(--fire2);border:none;color:#fff;font-family:'Chakra Petch',sans-serif;font-size:0.6rem;font-weight:700;cursor:pointer;letter-spacing:0.1em;}
+.c-send:active{opacity:0.8;}
+
+/* ── PANEL 4 — STATS TEMPS RÉEL ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+.stat-card{background:rgba(255,102,0,0.04);border:1px solid var(--border);padding:10px 12px;position:relative;overflow:hidden;}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;}
+.stat-card.g::after{background:var(--green);}
+.stat-card.f::after{background:var(--fire);}
+.stat-card.e::after{background:var(--ember);}
+.stat-card.c::after{background:var(--cyan);}
+.sc-val{font-family:'Chakra Petch',sans-serif;font-size:1.8rem;font-weight:700;line-height:1;}
+.sc-lbl{font-size:0.48rem;color:var(--muted);letter-spacing:0.15em;margin-top:3px;font-family:'Chakra Petch',sans-serif;}
+.sc-trend{font-size:0.6rem;margin-top:4px;}
+
+/* BARRES SECTEUR */
+.secteur-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.sec-lbl{font-size:0.6rem;color:var(--muted);min-width:80px;letter-spacing:0.04em;}
+.sec-bar{flex:1;height:5px;background:rgba(255,255,255,0.05);overflow:hidden;}
+.sec-fill{height:100%;transition:width 1.5s ease;}
+.sec-val{font-family:'Chakra Petch',sans-serif;font-size:0.6rem;min-width:35px;text-align:right;}
+
+/* ── BOTTOM BAR ── */
+.bottombar{
+  position:relative;z-index:100;flex-shrink:0;height:38px;
+  display:flex;align-items:center;
+  background:rgba(6,4,2,0.98);border-top:1px solid var(--fire);
+  box-shadow:0 -4px 20px rgba(255,102,0,0.1);
+}
+.bb-ticker{flex:1;overflow:hidden;padding:0 8px;position:relative;}
+.bb-ticker::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:20px;background:linear-gradient(90deg,rgba(6,4,2,1),transparent);z-index:2;pointer-events:none;}
+.bb-ticker::after{content:'';position:absolute;right:0;top:0;bottom:0;width:20px;background:linear-gradient(90deg,transparent,rgba(6,4,2,1));z-index:2;pointer-events:none;}
+.bb-ticker-inner{display:flex;gap:0;animation:ticker 40s linear infinite;white-space:nowrap;}
+.bb-ticker-inner:hover{animation-play-state:paused;}
+@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.tick-item{font-size:0.54rem;color:var(--muted);letter-spacing:0.06em;display:inline-flex;align-items:center;gap:5px;padding:0 14px;border-right:1px solid var(--border);height:38px;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
+.tick-item:hover{background:rgba(255,102,0,0.06);}
+.tick-item.hot{color:var(--fire3);}
+.tick-item.crit{color:var(--red);animation:tickblink 1s infinite;}
+.tick-item.ok{color:var(--green);}
+.tick-item.info{color:var(--cyan);}
+.tick-item.warn{color:var(--warm);}
+@keyframes tickblink{0%,100%{opacity:1;}50%{opacity:0.5;}}
+.tick-sep{color:var(--border2);font-size:0.45rem;}
+.bb-right{display:flex;align-items:center;gap:0;height:100%;flex-shrink:0;}
+.bb-btn{height:100%;padding:0 10px;border-left:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Chakra Petch',sans-serif;font-size:0.52rem;cursor:pointer;letter-spacing:0.1em;transition:all 0.2s;border-top:none;border-bottom:none;border-right:none;}
+.bb-btn:active{color:var(--fire);background:rgba(255,102,0,0.06);}
+.bb-btn.g{color:var(--green);}
+
+/* ── DETAIL MODAL ── */
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:500;display:none;align-items:flex-end;justify-content:center;}
+.detail-overlay.on{display:flex;}
+.detail-card{
+  width:100%;max-width:600px;
+  background:rgba(10,7,3,0.99);border-top:2px solid var(--fire);
+  padding:16px 16px 30px;
+  box-shadow:0 -20px 60px rgba(255,102,0,0.12);
+  transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  max-height:85vh;overflow-y:auto;
+}
+.detail-overlay.on .detail-card{transform:translateY(0);}
+.det-handle{width:36px;height:2px;background:var(--fire);box-shadow:0 0 8px var(--fire);margin:0 auto 14px;}
+.det-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;}
+.det-score-big{font-family:'Chakra Petch',sans-serif;font-size:2.5rem;font-weight:700;line-height:1;flex-shrink:0;text-align:center;min-width:60px;}
+.det-titles{flex:1;}
+.det-addr{font-family:'Chakra Petch',sans-serif;font-size:1rem;font-weight:700;letter-spacing:0.05em;line-height:1.1;}
+.det-sub{font-size:0.62rem;color:var(--muted);margin-top:4px;letter-spacing:0.05em;}
+
+/* SCORE BAR */
+.det-bar{height:4px;background:rgba(255,255,255,0.06);margin:8px 0;overflow:hidden;}
+.det-bar-fill{height:100%;transition:width 1.5s ease;box-shadow:0 0 10px currentColor;}
+
+/* INFOS GRID */
+.det-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;}
+.det-info{background:rgba(255,102,0,0.04);border:1px solid var(--border);padding:8px 10px;}
+.di-val{font-family:'Chakra Petch',sans-serif;font-size:1rem;font-weight:700;color:var(--fire3);}
+.di-lbl{font-size:0.48rem;color:var(--muted);letter-spacing:0.12em;margin-top:2px;}
+
+/* FICHE IA */
+.det-fiche{background:rgba(255,102,0,0.04);border:1px solid rgba(255,102,0,0.2);padding:10px 12px;margin-bottom:10px;}
+.fiche-title{font-family:'Chakra Petch',sans-serif;font-size:0.5rem;color:var(--muted);letter-spacing:0.2em;margin-bottom:6px;}
+.fiche-content{font-size:0.68rem;line-height:1.7;color:var(--fire3);}
+.fiche-loading{display:flex;gap:4px;align-items:center;}
+.fl-dot{width:5px;height:5px;border-radius:50%;background:var(--fire);animation:cdot 1.4s infinite;}
+.fl-dot:nth-child(2){animation-delay:0.2s;}
+.fl-dot:nth-child(3){animation-delay:0.4s;}
+
+/* ACTIONS */
+.det-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px;}
+.det-btn{padding:11px 8px;border:1px solid var(--border);background:transparent;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:0.7rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;}
+.det-btn:active{transform:scale(0.97);}
+.det-btn.sign{border-color:var(--green);color:var(--green);background:rgba(0,255,136,0.05);}
+.det-btn.done{border-color:#00aa55;color:#00aa55;}
+.det-btn.concur{border-color:var(--red);color:var(--red);}
+.det-btn.vide{border-color:var(--muted);color:var(--muted);}
+.det-btn.revoir{border-color:var(--cyan);color:var(--cyan);}
+.det-btn.bad{border-color:var(--border2);color:var(--muted);}
+.det-btn.full{grid-column:span 2;border-color:rgba(255,102,0,0.4);color:var(--fire3);}
+.det-cancel{width:100%;padding:10px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:0.7rem;cursor:pointer;margin-top:4px;letter-spacing:0.08em;}
+
+/* NOTE */
+.det-note{width:100%;padding:8px 10px;background:rgba(255,102,0,0.03);border:1px solid var(--border);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:0.72rem;outline:none;resize:none;margin-bottom:6px;letter-spacing:0.02em;}
+.det-note:focus{border-color:var(--fire3);}
+.det-ntags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;}
+.det-ntag{padding:2px 7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.55rem;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:0.05em;}
+.det-ntag:active{border-color:var(--fire);color:var(--fire);}
+
+/* TOAST */
+.toast{position:fixed;bottom:48px;left:50%;transform:translateX(-50%) translateY(8px);background:rgba(10,7,3,0.98);border:1px solid var(--fire);color:var(--fire3);padding:6px 16px;font-family:'Chakra Petch',sans-serif;font-size:0.65rem;z-index:9999;opacity:0;transition:all 0.2s;white-space:nowrap;pointer-events:none;letter-spacing:0.08em;box-shadow:0 0 20px rgba(255,102,0,0.15);}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.err{border-color:var(--red);color:var(--red);}
+.toast.ok{border-color:var(--green);color:var(--green);}
+
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="live-dot"></div>
+    <div>
+      <div class="brand-name">NEXUS·INTEL</div>
+      <div class="brand-sub">CONSEIL PROSPECTION IA</div>
+    </div>
+  </div>
+  <div class="import-zone">
+    <button class="imp-btn" id="btnOrange" onclick="document.getElementById('fOrange').click()">📂 ORANGE/FUSION</button>
+    <input type="file" id="fOrange" accept=".csv" onchange="importerCSV(event,'orange')">
+    <button class="imp-btn" id="btnAnniv" onclick="document.getElementById('fAnniv').click()">🎂 ANNIVERSAIRES</button>
+    <input type="file" id="fAnniv" accept=".csv" onchange="importerCSV(event,'anniv')">
+    <button class="imp-btn" id="btnDADDI" onclick="document.getElementById('fDADDI').click()">🔵 DADDI ANNIV</button>
+    <input type="file" id="fDADDI" accept=".csv" onchange="importerDADDI(event,'anniv')">
+    <button class="imp-btn" id="btnDADDIAuRA" onclick="document.getElementById('fDADDIAuRA').click()">🏢 DADDI AURA</button>
+    <input type="file" id="fDADDIAuRA" accept=".csv" onchange="importerDADDI(event,'orange')">
+    <button class="imp-btn" id="btnChaleur" onclick="document.getElementById('fChaleur').click()">🔥 HISTORIQUE</button>
+    <input type="file" id="fChaleur" accept=".csv" onchange="importerChaleur(event)">
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-time" id="hdrTime">--:--:--<span>VALENCE · AuRA</span></div>
+  </div>
+</div>
+
+<!-- MAIN 4 PANELS -->
+<div class="main">
+
+  <!-- PANEL 1 — CIBLES PRIORITAIRES -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-title">◈ CIBLES PRIORITAIRES</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-left:auto">
+        <select id="filtreRayon" onchange="majTargets()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:Chakra Petch,sans-serif;font-size:0.5rem;padding:2px 5px;outline:none;cursor:pointer">
+          <option value="0">TOUTE ZONE</option>
+          <option value="20" selected>20 KM</option>
+          <option value="30">30 KM</option>
+          <option value="50">50 KM</option>
+        </select>
+        <select id="filtreType" onchange="majTargets()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:Chakra Petch,sans-serif;font-size:0.5rem;padding:2px 5px;outline:none;cursor:pointer">
+          <option value="">TOUS TYPES</option>
+          <option value="hlm">HLM/SOCIAL</option>
+          <option value="both">DOUBLE OP.</option>
+          <option value="anniv">ANNIV.</option>
+          <option value="village">VILLAGES ISOLÉS</option>
+        </select>
+        <div class="panel-badge" id="targetCount">0 CIBLES</div>
+      </div>
+    </div>
+    <div class="panel-body" id="targetList">
+      <div style="text-align:center;padding:30px;font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;font-family:Chakra Petch,sans-serif">IMPORTEZ fusion_orange_sfr.csv</div>
+    </div>
+  </div>
+
+  <!-- PANEL 2 — ANNIVERSAIRES -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-title">◈ ANNIVERSAIRES CLIENTS</div>
+      <select id="filtreAnniv" onchange="majAnnivs()" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:Chakra Petch,sans-serif;font-size:0.5rem;padding:2px 5px;outline:none;cursor:pointer;margin-left:auto">
+        <option value="30" selected>J+30</option>
+        <option value="14">J+14</option>
+        <option value="7">J+7</option>
+        <option value="45">J+45</option>
+      </select>
+      <div class="panel-badge" id="annivCount" style="margin-left:8px">0</div>
+    </div>
+    <div class="panel-body" id="annivList">
+      <div style="text-align:center;padding:30px;font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;font-family:Chakra Petch,sans-serif">IMPORTEZ anniversaires.csv ou DADDI_Anniversaires.csv</div>
+    </div>
+  </div>
+
+  <!-- PANEL 3 — CONSEIL IA -->
+  <div class="panel" style="grid-row:span 1">
+    <div class="panel-hdr">
+      <div class="panel-title">◈ CONSEIL IA TEMPS RÉEL</div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+        <div class="live-dot" style="width:5px;height:5px"></div>
+        <div class="panel-badge" id="aiStatusLbl">PRÊT</div>
+      </div>
+    </div>
+    <div class="conseil-wrap">
+      <div class="conseil-msgs" id="conseilMsgs">
+        <div class="c-msg sys">NEXUS·INTEL OPÉRATIONNEL · IMPORTEZ VOS DONNÉES POUR COMMENCER</div>
+      </div>
+      <div class="conseil-quick">
+        <button class="cq" onclick="quickConseil('Quelle est ma meilleure zone HLM à prospecter maintenant ?')">BEST HLM</button>
+        <button class="cq" onclick="quickConseil('Anniversaires urgents cette semaine, que faire ?')">ANNIV URG.</button>
+        <button class="cq" onclick="quickConseil('Stratégie pour les villes éloignées à faible concurrence ?')">VILLAGES</button>
+        <button class="cq" onclick="quickConseil('Top 5 arguments pour les immeubles en fin de cuivre ?')">FIN CUIVRE</button>
+        <button class="cq" onclick="quickConseil('Objection fan SFR, comment répondre ?')">CONTRE SFR</button>
+        <button class="cq" onclick="quickConseil('Analyse complète de mon secteur et plan d\'action ?')">ANALYSE</button>
+        <button class="cq" onclick="quickConseil('Génère mon circuit optimal pour demain matin')">CIRCUIT IA</button>
+        <button class="cq" onclick="quickConseil('Quels immeubles prospecter en priorité absolue ?')">PRIORITÉ</button>
+      </div>
+      <div class="conseil-input-row">
+        <input class="c-input" id="conseilInput" placeholder="DEMANDEZ CONSEIL À L'IA..." onkeydown="if(event.key==='Enter')envoyerConseil()">
+        <button class="c-send" onclick="envoyerConseil()">↑</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 4 — STATS & PERFORMANCE -->
+  <div class="panel">
+    <div class="panel-hdr">
+      <div class="panel-title">◈ PERFORMANCE SECTEUR</div>
+      <div class="panel-badge" id="statsDate">--/--/----</div>
+    </div>
+    <div class="panel-body">
+      <div class="stats-grid">
+        <div class="stat-card g"><div class="sc-val" id="scContrats" style="color:var(--green)">0</div><div class="sc-lbl">CONTRATS</div></div>
+        <div class="stat-card f"><div class="sc-val" id="scTaux" style="color:var(--fire3)">0%</div><div class="sc-lbl">CONVERSION</div></div>
+        <div class="stat-card e"><div class="sc-val" id="scTotal" style="color:var(--ember)">0</div><div class="sc-lbl">CIBLES ACTIVES</div></div>
+        <div class="stat-card c"><div class="sc-val" id="scAnniv" style="color:var(--cyan)">0</div><div class="sc-lbl">ANNIV URGENTS</div></div>
+      </div>
+
+      <div style="font-family:'Chakra Petch',sans-serif;font-size:0.48rem;color:var(--muted);letter-spacing:0.2em;margin-bottom:6px;padding-top:4px;">SCORE MOYEN PAR DÉPARTEMENT</div>
+      <div id="deptBars">
+        <div style="text-align:center;padding:10px;font-size:0.58rem;color:var(--muted)">Chargez des données</div>
+      </div>
+
+      <div style="font-family:'Chakra Petch',sans-serif;font-size:0.48rem;color:var(--muted);letter-spacing:0.2em;margin:8px 0 6px;border-top:1px solid var(--border);padding-top:8px;">ACTIONS SESSION</div>
+      <div id="actionsLog" style="max-height:90px;overflow-y:auto;">
+        <div style="font-size:0.58rem;color:var(--muted)">Aucune action</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM TICKER -->
+<div class="bottombar">
+  <div class="bb-ticker">
+    <div class="bb-ticker-inner" id="ticker">
+      <div class="tick-item">◈ NEXUS INTEL <span class="tick-sep">·</span></div>
+      <div class="tick-item">IMPORTEZ VOS DONNÉES POUR ACTIVER LE SYSTÈME <span class="tick-sep">·</span></div>
+      <div class="tick-item hot">FIBRE BOUYGUES · AURA <span class="tick-sep">·</span></div>
+      <div class="tick-item">VALENCE 26 <span class="tick-sep">·</span></div>
+      <!-- Dupliqué pour loop -->
+      <div class="tick-item">◈ NEXUS INTEL <span class="tick-sep">·</span></div>
+      <div class="tick-item">IMPORTEZ VOS DONNÉES POUR ACTIVER LE SYSTÈME <span class="tick-sep">·</span></div>
+      <div class="tick-item hot">FIBRE BOUYGUES · AURA <span class="tick-sep">·</span></div>
+      <div class="tick-item">VALENCE 26 <span class="tick-sep">·</span></div>
+    </div>
+  </div>
+  <div class="bb-right">
+    <button class="bb-btn" onclick="exporterCircuit()">EXPORT CIRCUIT</button>
+    <button class="bb-btn g" onclick="exporterTraites()">EXPORT TRAITÉS</button>
+    <button class="bb-btn" onclick="resetSession()">RESET</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="detail-overlay" id="detailOverlay" onclick="if(event.target===this)fermerDetail()">
+  <div class="detail-card">
+    <div class="det-handle"></div>
+    <div class="det-header">
+      <div class="det-score-big" id="detScore">—</div>
+      <div class="det-titles">
+        <div class="det-addr" id="detAddr">—</div>
+        <div class="det-sub" id="detSub">—</div>
+      </div>
+    </div>
+    <div class="det-bar"><div class="det-bar-fill" id="detBarFill" style="width:0%"></div></div>
+    <div class="det-grid">
+      <div class="det-info"><div class="di-val" id="detLog">—</div><div class="di-lbl">LOGEMENTS</div></div>
+      <div class="det-info"><div class="di-val" id="detDist">—</div><div class="di-lbl">KM VALENCE</div></div>
+      <div class="det-info"><div class="di-val" id="detType">—</div><div class="di-lbl">TYPE</div></div>
+    </div>
+    <div class="det-fiche">
+      <div class="fiche-title">◈ FICHE IA — STRATÉGIE PROSPECTION</div>
+      <div class="fiche-content" id="ficheContent">
+        <div class="fiche-loading"><div class="fl-dot"></div><div class="fl-dot"></div><div class="fl-dot"></div>&nbsp;&nbsp;ANALYSE EN COURS...</div>
+      </div>
+    </div>
+    <textarea class="det-note" id="detNote" rows="2" placeholder="NOTE TERRAIN..."></textarea>
+    <div class="det-ntags">
+      <button class="det-ntag" onclick="addNtag('Absent')">ABSENT</button>
+      <button class="det-ntag" onclick="addNtag('Fan SFR')">FAN SFR</button>
+      <button class="det-ntag" onclick="addNtag('Trop cher')">CHER</button>
+      <button class="det-ntag" onclick="addNtag('Engagé')">ENGAGÉ</button>
+      <button class="det-ntag" onclick="addNtag('Gardien')">GARDIEN</button>
+      <button class="det-ntag" onclick="addNtag('À repasser')">REPASSER</button>
+    </div>
+    <div class="det-actions">
+      <button class="det-btn sign" onclick="detAction('signé')">🎉 CONTRAT</button>
+      <button class="det-btn done" onclick="detAction('done')">✅ PROSPECTÉ</button>
+      <button class="det-btn concur" onclick="detAction('concurrent')">🔴 CONCURRENT</button>
+      <button class="det-btn vide" onclick="detAction('vide')">🏚 VIDE</button>
+      <button class="det-btn revoir" onclick="detAction('revoir')">🔄 À REVOIR</button>
+      <button class="det-btn bad" onclick="detAction('bad')">❌ MAUVAISE</button>
+      <button class="det-btn full" onclick="detAction('verifier')">🔍 À VÉRIFIER ORANGE/SFR</button>
+    </div>
+    <button class="det-cancel" onclick="fermerDetail()">FERMER</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+var points=[],annivs=[],traites=[],actions=[];
+var contrats=0,portes=0;
+var selectedPoint=null;
+var histoImmeuble={};
+var HOME_LAT=44.9334,HOME_LON=4.8924;
+
+// ══════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════
+setInterval(function(){
+  var n=new Date();
+  document.getElementById('hdrTime').innerHTML=
+    n.toLocaleTimeString('fr')+'<span>'+n.toLocaleDateString('fr')+' · VALENCE</span>';
+  document.getElementById('statsDate').textContent=n.toLocaleDateString('fr');
+},1000);
+
+// ══════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════
+function hav(a,b,c,d){var R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180,e=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2;return R*2*Math.atan2(Math.sqrt(e),Math.sqrt(1-e));}
+function today(){return new Date().toISOString().split('T')[0];}
+function lireFichier(file){return new Promise(function(res){var r=new FileReader();r.onload=function(e){res(e.target.result);};r.readAsText(file,'utf-8');});}
+
+// ══════════════════════════════════════════════════
+// ALGO SCORING SURPUISSANT — 20+ CRITÈRES
+// ══════════════════════════════════════════════════
+
+// Base de données grandes villes AuRA (malus concurrence)
+var GRANDES_VILLES = {
+  'grenoble':30,'lyon':35,'avignon':28,'saint-etienne':20,'annecy':22,
+  'chambery':18,'valence':15,'clermont-ferrand':25,'nice':30,'marseille':35,
+  'montpellier':28,'nimes':20,'toulon':25,'aix-en-provence':25,
+};
+// Zones de montagne/stations ski (malus)
+var ZONES_SKI = ['chamonix','megeve','courchevel','meribel','les arcs','tignes',
+  'val d\'isere','morzine','les gets','samoens','chatel','avoriaz','flaine',
+  'serre chevalier','les deux alpes','l\'alpe d\'huez','villard de lans'];
+// Villes à fort potentiel HLM (bonus)
+var VILLES_HLM = ['romans','montélimar','privas','aubenas','annonay','roanne',
+  'bourgoin','vienne','crest','nyons','die','morestel','la tour du pin',
+  'bourg-en-bresse','belley','albertville','ugine','aix les bains','rumilly'];
+// Codes postaux zones peu couvertes (bonus zones blanches)
+var ZONES_BLANCHES = ['07','26','42','43','05'];
+
+function calcScorePuissant(p, contexte) {
+  var ctx = contexte || {};
+  var score = 0;
+  var facteurs = [];
+
+  var lat   = p.lat  || HOME_LAT;
+  var lon   = p.lon  || HOME_LON;
+  var dist  = p.dist || hav(HOME_LAT, HOME_LON, lat, lon);
+  var loc   = p.locaux || 0;
+  var adr   = (p.adresse  || '').toLowerCase();
+  var com   = (p.commune  || '').toLowerCase();
+  var dept  = (p.dept     || '').toLowerCase();
+  var coul  = (p.couleur  || '').toLowerCase();
+  var mesc  = (p.mesc     || '');
+  var now   = new Date();
+  var h     = now.getHours();
+  var jour  = now.getDay();
+
+  // ── 1. SCORE DE BASE ARCEP (0-40 pts) ──────────────────────
+  var base = p.score || 0;
+  if(base > 0) {
+    score += Math.min(40, base * 0.4);
+    facteurs.push({f:'BASE ARCEP', v:'+'+Math.round(base*0.4), c:'#ff8800'});
+  }
+
+  // ── 2. TAILLE IMMEUBLE — RENDEMENT (0-20 pts) ──────────────
+  var bonusLoc = 0;
+  if(loc >= 100) bonusLoc = 20;
+  else if(loc >= 50) bonusLoc = 17;
+  else if(loc >= 30) bonusLoc = 14;
+  else if(loc >= 20) bonusLoc = 11;
+  else if(loc >= 10) bonusLoc = 8;
+  else if(loc >= 6)  bonusLoc = 4;
+  else bonusLoc = 1;
+  score += bonusLoc;
+  if(bonusLoc > 0) facteurs.push({f:loc+' LOGEMENTS', v:'+'+bonusLoc, c:'#ff6600'});
+
+  // ── 3. DOUBLE OPÉRATEUR (0-25 pts) ─────────────────────────
+  if(p.ptype === 'both') {
+    score += 25;
+    facteurs.push({f:'DOUBLE OP. ORANGE+SFR', v:'+25', c:'#ffd700'});
+  }
+
+  // ── 4. ANNIVERSAIRE CLIENT — PLEIN TARIF (0-30 pts) ────────
+  if(p.ptype === 'anniv') {
+    var jda = p.jours_anniv || 0;
+    var bonusA = jda <= 7 ? 30 : jda <= 14 ? 25 : jda <= 21 ? 18 : 12;
+    score += bonusA;
+    facteurs.push({f:'ANNIV '+p.typeAnniv+' J+'+jda, v:'+'+bonusA, c:'#ff6eb4'});
+  }
+
+  // ── 5. COULEUR PASSE ARCEP (0-15 pts) ──────────────────────
+  if(coul === 'red')    { score += 15; facteurs.push({f:'PASSE 3 PRIORITAIRE', v:'+15', c:'#ff3355'}); }
+  else if(coul === 'orange') { score += 10; facteurs.push({f:'P1 PRIORITAIRE',v:'+10',c:'#ff8c00'}); }
+  else if(coul === 'blue')   { score += 8;  facteurs.push({f:'PASSE 3 STANDARD', v:'+8', c:'#00c8ff'}); }
+  else if(coul === 'green')  { score += 5;  facteurs.push({f:'P1 STANDARD',      v:'+5', c:'#00d46a'}); }
+
+  // ── 6. DISTANCE OPTIMALE (0-12 pts) ────────────────────────
+  var bonusDist = 0;
+  if(dist <= 5)       bonusDist = 12;
+  else if(dist <= 10) bonusDist = 10;
+  else if(dist <= 15) bonusDist = 8;
+  else if(dist <= 25) bonusDist = 6;
+  else if(dist <= 40) bonusDist = 3;
+  score += bonusDist;
+  if(bonusDist >= 6) facteurs.push({f:'PROCHE ('+dist.toFixed(0)+'KM)', v:'+'+bonusDist, c:'#00ccff'});
+
+  // ── 7. VILLAGE ISOLÉ À FORT POTENTIEL (0-18 pts) ───────────
+  // Bonus si éloigné des grandes villes + peu visité = vierge !
+  var isGrandeVille = Object.keys(GRANDES_VILLES).some(function(v){ return com.includes(v); });
+  if(!isGrandeVille && dist > 20) {
+    // Zone isolée avec immeubles = pépite cachée !
+    score += 12;
+    facteurs.push({f:'ZONE ISOLÉE (PÉPITE)', v:'+12', c:'#00ff88'});
+    if(loc >= 15) {
+      score += 6;
+      facteurs.push({f:'GRAND IMM. ISOLÉ', v:'+6', c:'#00ff88'});
+    }
+  }
+
+  // ── 8. DÉTECTION HLM / BAILLEUR SOCIAL (0-10 pts) ──────────
+  var hlmKeywords = ['hlm','opac','sa hlm','bailleur','social','habitat','foyer',
+    'cité','grand ensemble','les tours','les pins','les acacias','les peupliers',
+    'les roses','les lilas','parc','residences','opieuvre','areal','alliade',
+    'immobilière','domial','habitat dauphinois','vilogia'];
+  var isHlm = hlmKeywords.some(function(k){ return adr.includes(k)||com.includes(k); }) || loc >= 50;
+  if(isHlm) {
+    score += 10;
+    facteurs.push({f:'HLM/BAILLEUR SOCIAL', v:'+10', c:'#00ccff'});
+  }
+
+  // ── 9. VILLE À FORT POTENTIEL HLM CONNU (0-8 pts) ──────────
+  if(VILLES_HLM.some(function(v){ return com.includes(v); })) {
+    score += 8;
+    facteurs.push({f:'VILLE HLM FORT POTENTIEL', v:'+8', c:'#00cc88'});
+  }
+
+  // ── 10. DÉPARTEMENT ZONE BLANCHE (0-8 pts) ─────────────────
+  if(ZONES_BLANCHES.includes(dept)) {
+    score += 8;
+    facteurs.push({f:'ZONE BLANCHE DEPT '+dept, v:'+8', c:'#ffcc00'});
+  }
+
+  // ── 11. HEURE DE PROSPECTION (0-10 pts) ────────────────────
+  var bonusH = 0;
+  if(h >= 9 && h <= 11)       { bonusH = 10; facteurs.push({f:'PEAK MATIN 9-11H', v:'+10', c:'#ff9900'}); }
+  else if(h >= 14 && h <= 17) { bonusH = 8;  facteurs.push({f:'PEAK APREM 14-17H', v:'+8', c:'#ff9900'}); }
+  else if(h >= 18 && h <= 20) { bonusH = 5;  facteurs.push({f:'SOIRÉE 18-20H', v:'+5', c:'#ff9900'}); }
+  else if(h < 8 || h > 20)    { bonusH = -12; facteurs.push({f:'HORS HORAIRES', v:'-12', c:'#ff3333'}); }
+  score += bonusH;
+
+  // ── 12. JOUR DE LA SEMAINE (0-8 pts) ───────────────────────
+  if(jour === 0 || jour === 6) {
+    score -= 15;
+    facteurs.push({f:'WEEK-END', v:'-15', c:'#ff3333'});
+  } else if(jour >= 2 && jour <= 4) {
+    score += 8;
+    facteurs.push({f:'MAR-JEU OPTIMAL', v:'+8', c:'#ff9900'});
+  } else if(jour === 1) {
+    score += 3;
+    facteurs.push({f:'LUNDI OK', v:'+3', c:'#ff9900'});
+  } else if(jour === 5) {
+    score += 2;
+    facteurs.push({f:'VENDREDI', v:'+2', c:'#ff9900'});
+  }
+
+  // ── 13. MALUS GRANDE VILLE (haute concurrence) ─────────────
+  var malusGV = 0;
+  Object.entries(GRANDES_VILLES).forEach(function(e) {
+    if(com.includes(e[0])) { malusGV = Math.max(malusGV, e[1]); }
+  });
+  if(malusGV > 0) {
+    score -= malusGV;
+    facteurs.push({f:'GRANDE VILLE (CONCURRENCE)', v:'-'+malusGV, c:'#ff4444'});
+  }
+
+  // ── 14. MALUS STATION SKI (saisonnalité) ───────────────────
+  if(ZONES_SKI.some(function(z){ return com.includes(z); })) {
+    score -= 18;
+    facteurs.push({f:'STATION SKI (SAISONNIER)', v:'-18', c:'#ff4444'});
+  }
+
+  // ── 15. HISTORIQUE VISITES ÉQUIPE ──────────────────────────
+  var visites = ctx.visites || null;
+  if(visites) {
+    var jours = visites.minJ;
+    var nb    = visites.nb;
+    var malusV = 0;
+    if(jours < 15)       malusV = 30;
+    else if(jours < 30)  malusV = 22;
+    else if(jours < 60)  malusV = 14;
+    else if(jours < 90)  malusV = 8;
+    else if(jours < 180) malusV = 4;
+    malusV += Math.min(nb * 3, 15); // Malus supplémentaire si beaucoup de visites
+    score -= malusV;
+    facteurs.push({f:'VISITÉ '+nb+'x ('+jours+'J)', v:'-'+malusV, c:'#ff3333'});
+  }
+
+  // ── 16. MESC DATE — URGENCE CUIVRE ────────────────────────
+  if(mesc && mesc !== '2050-01-01' && mesc.length >= 8) {
+    try {
+      var mescDate = new Date(mesc);
+      var joursRestants = Math.floor((mescDate - now) / 86400000);
+      if(joursRestants >= 0 && joursRestants <= 90) {
+        score += 20;
+        facteurs.push({f:'MESC URGENT ('+joursRestants+'J)', v:'+20', c:'#ff0000'});
+      } else if(joursRestants > 90 && joursRestants <= 180) {
+        score += 12;
+        facteurs.push({f:'MESC PROCHE ('+Math.round(joursRestants/30)+'MOIS)', v:'+12', c:'#ff6600'});
+      } else if(joursRestants > 180 && joursRestants <= 365) {
+        score += 6;
+        facteurs.push({f:'MESC 1 AN', v:'+6', c:'#ff8800'});
+      }
+    } catch(e) {}
+  }
+
+  // ── 17. DENSITÉ LOCALE — EFFET GRAPPE ──────────────────────
+  var voisins = ctx.voisins || 0;
+  if(voisins >= 5)       { score += 8;  facteurs.push({f:'CLUSTER '+voisins+' IMMEUBLES', v:'+8', c:'#ffcc00'}); }
+  else if(voisins >= 3)  { score += 4;  facteurs.push({f:'GROUPE '+voisins+' IMMEUBLES', v:'+4', c:'#ffaa00'}); }
+  else if(voisins === 0) { score += 3;  facteurs.push({f:'IMMEUBLE ISOLÉ (VIERGE ?)', v:'+3', c:'#00ff88'}); }
+
+  // ── 18. SCORE DADDI (si import DADDI) ──────────────────────
+  if(p.source === 'daddi') {
+    score += 5;
+    facteurs.push({f:'SOURCE DADDI DIRECT', v:'+5', c:'#00ccff'});
+    if(p.prio && p.prio.includes('MAXIMALE')) {
+      score += 15;
+      facteurs.push({f:'PRIORITÉ MAXIMALE DADDI', v:'+15', c:'#ff0000'});
+    }
+  }
+
+  // ── 19. BONUS RUES CONNUES HLM ─────────────────────────────
+  var ruesHLM = ['marx dormoy','jean moulin','jean jaurès','jules guesde',
+    'paul éluard','victor hugo','pablo picasso','salvador allende','gabriel péri',
+    'avenue des roses','clos','impasse des','allée des','passage du'];
+  if(ruesHLM.some(function(r){ return adr.includes(r); })) {
+    score += 6;
+    facteurs.push({f:'RUE HLM TYPIQUE', v:'+6', c:'#00aa66'});
+  }
+
+  // ── 20. INDICATEUR ZONE NON PROSPECTÉE RÉCEMMENT ───────────
+  if(!ctx.visites && dist >= 15) {
+    // Zone éloignée sans historique = potentiellement vierge
+    score += 5;
+    facteurs.push({f:'ZONE VIERGE (NO HISTORIQUE)', v:'+5', c:'#00ff88'});
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  return { score: score, facteurs: facteurs };
+}
+
+function getColor(s){return s>=80?'#ff6600':s>=60?'#ff9900':s>=40?'#ffcc00':'#ff3300';}
+function getEmoji(s){return s>=80?'🔥':s>=60?'⚡':s>=40?'⚠️':'❄️';}
+
+function isHLM(p){
+  var a=(p.adresse||'').toLowerCase(),c=(p.commune||'').toLowerCase();
+  var k=['hlm','opac','bailleur','social','habitat','foyer','cité','grand ensemble','alliade','domial'];
+  return k.some(function(w){return a.includes(w)||c.includes(w);})||p.locaux>=50;
+}
+function isVillageEloigne(p){
+  var dist=p.dist||hav(HOME_LAT,HOME_LON,p.lat||HOME_LAT,p.lon||HOME_LON);
+  return dist>20&&!Object.keys(GRANDES_VILLES).some(function(v){return(p.commune||'').toLowerCase().includes(v);});
+}
+
+// Précalcul voisins (densité locale 2km)
+function precalcVoisins(liste) {
+  liste.forEach(function(p) {
+    if(!p.lat||!p.lon){p._voisins=0;return;}
+    p._voisins = liste.filter(function(q){
+      return q.id!==p.id && q.lat && q.lon && hav(p.lat,p.lon,q.lat,q.lon)<=2;
+    }).length;
+  });
+}
+
+// ══════════════════════════════════════════════════
+// IMPORT STANDARD CSV
+// ══════════════════════════════════════════════════
+function importerCSV(event,type){
+  var file=event.target.files[0];if(!file)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var lines=e.target.result.split('\n').filter(function(l){return l.trim();});
+    if(lines.length<2){toast('FICHIER INVALIDE',true);return;}
+    var sep=lines[0].includes(';')?';':',';
+    var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+    var fi={
+      adresse:h.findIndex(function(v){return v==='adresse';}),
+      commune:h.findIndex(function(v){return v.includes('commune');}),
+      dept:h.findIndex(function(v){return v==='dept'||v==='dpt';}),
+      locaux:h.findIndex(function(v){return v==='locaux'||v.includes('logloc')||v==='nb'||v.includes('nombrelogement');}),
+      lat:h.findIndex(function(v){return v==='lat'||v==='ban_lat';}),
+      lon:h.findIndex(function(v){return v==='lon'||v==='ban_lon';}),
+      couleur:h.findIndex(function(v){return v==='couleur';}),
+      score:h.findIndex(function(v){return v==='score';}),
+      operateur:h.findIndex(function(v){return v==='operateur';}),
+      jours:h.findIndex(function(v){return v.includes('jours_depuis_anniv');}),
+      mesc:h.findIndex(function(v){return v.includes('mesc');}),
+      typeA:h.findIndex(function(v){return v==='type_anniv';}),
+      numero:h.findIndex(function(v){return v.includes('numerovoi');}),
+      voie:h.findIndex(function(v){return v.includes('nomvoie');}),
+      cp:h.findIndex(function(v){return v.includes('codepostal');}),
+    };
+    var added=0;
+    for(var i=1;i<lines.length;i++){
+      var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+      var lat,lon,adr,commune,dept,nb,jda=0,ptype=type,mesc='';
+
+      // Détection format DADDI anniversaires (sans lat/lon)
+      if(fi.lat<0&&fi.voie>=0){
+        // Format DADDI — on ignore sans coords (sera géocodé par importerDADDI)
+        continue;
+      }
+
+      lat=fi.lat>=0?parseFloat(c[fi.lat]):NaN;
+      lon=fi.lon>=0?parseFloat(c[fi.lon]):NaN;
+      if(isNaN(lat)||isNaN(lon))continue;
+      adr=fi.adresse>=0?c[fi.adresse]:'';if(!adr)continue;
+      commune=fi.commune>=0?c[fi.commune]:'';
+      dept=fi.dept>=0?c[fi.dept]:'';
+      nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
+      jda=fi.jours>=0?parseInt(c[fi.jours])||0:0;
+      mesc=fi.mesc>=0?c[fi.mesc]:'';
+      var op=fi.operateur>=0?c[fi.operateur]:'';
+      if(op==='both')ptype='both';else if(op==='sfr')ptype='sfr';
+      if(type==='anniv'){if(jda<=0||jda>45)continue;ptype='anniv';}
+
+      var id=adr+'_'+lat.toFixed(4)+'_'+lon.toFixed(4);
+      var dist=hav(HOME_LAT,HOME_LON,lat,lon);
+
+      var obj={id:id,adresse:adr,commune:commune,dept:dept,locaux:nb,lat:lat,lon:lon,couleur:fi.couleur>=0?c[fi.couleur]:'',score:fi.score>=0?parseFloat(c[fi.score])||0:0,ptype:ptype,jours_anniv:jda,mesc:mesc,dist:dist,note:'',action:'',typeAnniv:fi.typeA>=0?c[fi.typeA]:'1an'};
+
+      if(type==='anniv'){
+        if(!annivs.find(function(a){return a.id===id;})){annivs.push(obj);added++;}
+      }else{
+        if(!points.find(function(p){return p.id===id;})){points.push(obj);added++;}
+      }
+    }
+
+    var btn=document.getElementById(type==='anniv'?'btnAnniv':'btnOrange');
+    if(btn)btn.classList.add('loaded');
+    majAll();
+    toast(added+' '+type.toUpperCase()+' CHARGÉS');
+  };
+  r.readAsText(file,'utf-8');
+}
+
+// ══════════════════════════════════════════════════
+// IMPORT DADDI ANNIVERSAIRES (géocodage BAN)
+// ══════════════════════════════════════════════════
+async function importerDADDI(event, typeForce){
+  var file=event.target.files[0];if(!file)return;
+  toast('GÉOCODAGE DADDI...');
+  var text=await lireFichier(file);
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  var sep=lines[0].includes(';')?';':',';
+  var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+
+  // Détecter automatiquement le type
+  var isAnniv = h.some(function(v){return v==='jours_depuis_anniv'||v==='type_anniv';});
+  var type = typeForce || (isAnniv ? 'anniv' : 'orange');
+
+  var fi={
+    jda:     h.findIndex(function(v){return v==='jours_depuis_anniv';}),
+    typeA:   h.findIndex(function(v){return v==='type_anniv';}),
+    numero:  h.findIndex(function(v){return v.includes('numerovoi');}),
+    compl:   h.findIndex(function(v){return v.includes('complnumero');}),
+    voie:    h.findIndex(function(v){return v.includes('nomvoie');}),
+    cp:      h.findIndex(function(v){return v.includes('codepostal');}),
+    commune: h.findIndex(function(v){return v==='commune';}),
+    locaux:  h.findIndex(function(v){return v.includes('nombrelogement');}),
+    mesc:    h.findIndex(function(v){return v.includes('mescdate')||v==='mescdate';}),
+    dept:    h.findIndex(function(v){return v==='dept';}),
+    prio:    h.findIndex(function(v){return v==='priorite';}),
+    scoring: h.findIndex(function(v){return v==='scoring';}),
+    distKm:  h.findIndex(function(v){return v.includes('distancekm');}),
+  };
+
+  var added=0,errors=0;
+  var limit=Math.min(lines.length, type==='anniv'?lines.length:301);
+
+  for(var i=1;i<limit;i++){
+    var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+    var jda=fi.jda>=0?parseInt(c[fi.jda])||0:0;
+    if(type==='anniv'&&(jda<0||jda>45))continue;
+
+    var num   = fi.numero>=0  ? c[fi.numero]   : '';
+    var compl = fi.compl>=0   ? c[fi.compl]    : '';
+    var voie  = fi.voie>=0    ? c[fi.voie]     : '';
+    var cp    = fi.cp>=0      ? c[fi.cp]        : '';
+    var com   = fi.commune>=0 ? c[fi.commune]   : '';
+    var nb    = fi.locaux>=0  ? parseInt(c[fi.locaux])||0  : 0;
+    var mesc  = fi.mesc>=0    ? c[fi.mesc]      : '';
+    var dept  = fi.dept>=0    ? c[fi.dept]      : (cp?cp.substring(0,2):'');
+    var typeA = fi.typeA>=0   ? c[fi.typeA]     : '1an';
+    var prio  = fi.prio>=0    ? c[fi.prio]      : '';
+    var scoring=fi.scoring>=0 ? c[fi.scoring]   : '';
+
+    if(!voie||!cp)continue;
+    var adrStr=([num,compl].filter(Boolean).join(' ')+' '+voie).trim()+', '+cp+' '+com;
+    var id=adrStr+'_daddi_'+type+'_'+i;
+
+    var cible = type==='anniv'?annivs:points;
+    if(cible.find(function(x){return x.id===id;}))continue;
+
+    try{
+      var q=encodeURIComponent([num,compl,voie].filter(Boolean).join(' ')+' '+cp+' '+com);
+      var resp=await fetch('https://api-adresse.data.gouv.fr/search/?q='+q+'&limit=1');
+      var d=await resp.json();
+      if(d.features&&d.features.length>0){
+        var coords=d.features[0].geometry.coordinates;
+        var dist=hav(HOME_LAT,HOME_LON,coords[1],coords[0]);
+        var obj={
+          id:id, adresse:adrStr, commune:com, dept:dept, locaux:nb,
+          lat:coords[1], lon:coords[0], score:0, couleur:'',
+          ptype:type==='anniv'?'anniv':'daddi',
+          jours_anniv:jda, mesc:mesc, typeAnniv:typeA,
+          dist:dist, note:'', action:'',
+          source:'daddi', prio:prio, scoring:scoring,
+        };
+        cible.push(obj);
+        added++;
+        if(added%10===0)toast('DADDI: '+added+' GÉOCODÉS...');
+      }else errors++;
+    }catch(ex){errors++;}
+    await new Promise(function(r){setTimeout(r,80);});
+  }
+
+  // Marquer le bouton
+  var btnId=type==='anniv'?'btnDADDI':'btnDADDIAuRA';
+  var btn=document.getElementById(btnId);
+  if(btn)btn.classList.add('loaded');
+  majAll();
+  toast('DADDI '+type.toUpperCase()+': '+added+' POINTS ('+errors+' NON TROUVÉS)');
+}
+
+// ══════════════════════════════════════════════════
+// HISTORIQUE CHALEUR
+// ══════════════════════════════════════════════════
+var vistesVilles={};
+function importerChaleur(event){
+  var file=event.target.files[0];if(!file)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var lines=e.target.result.split('\n').filter(function(l){return l.trim();});
+    var sep=lines[0].includes(';')?';':',';
+    var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+    var fd=h.findIndex(function(v){return v.includes('date');}),fv=h.findIndex(function(v){return v.includes('ville');});
+    if(fd<0||fv<0)return;
+    var tn=new Date();vistesVilles={};
+    for(var i=1;i<lines.length;i++){
+      var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+      var ville=c[fv]&&c[fv].trim(),ds=c[fd]&&c[fd].trim();if(!ville||!ds)continue;
+      try{var pt=ds.split('/');var d=new Date(pt[2],pt[1]-1,pt[0]);var j=Math.floor((tn-d)/86400000);
+        if(j<400){if(!vistesVilles[ville])vistesVilles[ville]={nb:0,minJ:9999};vistesVilles[ville].nb++;if(j<vistesVilles[ville].minJ)vistesVilles[ville].minJ=j;}
+      }catch(ex){}
+    }
+    document.getElementById('btnChaleur').classList.add('loaded');
+    majAll();toast(Object.keys(vistesVilles).length+' VILLES HISTORIQUE');
+  };
+  r.readAsText(file,'utf-8');
+}
+
+// ══════════════════════════════════════════════════
+// AFFICHAGE CIBLES
+// ══════════════════════════════════════════════════
+function majAll(){majTargets();majAnnivs();majStats();majTicker();}
+
+function majTargets(){
+  var rayon=parseInt(document.getElementById('filtreRayon').value)||0;
+  var typeF=document.getElementById('filtreType').value;
+
+  var actifs=points.filter(function(p){return!['done','bad','concurrent','signé'].includes(p.action);});
+  // Ajouter annivs dans cibles si filtre anniv ou tous
+  if(typeF==='anniv'||typeF===''){
+    var annivActifs=annivs.filter(function(a){return!['done','bad','concurrent','signé'].includes(a.action)&&a.jours_anniv<=30;});
+    actifs=actifs.concat(annivActifs);
+  }
+
+  if(rayon>0)actifs=actifs.filter(function(p){
+    var d=p.dist||hav(HOME_LAT,HOME_LON,p.lat||HOME_LAT,p.lon||HOME_LON);
+    return d<=rayon;
+  });
+
+  if(typeF==='hlm')    actifs=actifs.filter(function(p){return isHLM(p);});
+  else if(typeF==='both')   actifs=actifs.filter(function(p){return p.ptype==='both';});
+  else if(typeF==='village') actifs=actifs.filter(function(p){return isVillageEloigne(p);});
+
+  // Précalcul densité locale
+  precalcVoisins(actifs);
+
+  // Appliquer l'algo surpuissant
+  actifs.forEach(function(p){
+    var visites=null;
+    var com=(p.commune||'').toLowerCase();
+    Object.keys(vistesVilles).forEach(function(v){
+      if(v.toLowerCase()===com||com.includes(v.toLowerCase())||v.toLowerCase().includes(com)){
+        visites=vistesVilles[v];
+      }
+    });
+    var res=calcScorePuissant(p,{visites:visites,voisins:p._voisins||0});
+    p.scoreF=res.score;
+    p._facteurs=res.facteurs;
+  });
+
+  actifs.sort(function(a,b){return b.scoreF-a.scoreF;});
+
+  document.getElementById('targetCount').textContent=actifs.length+' CIBLES';
+
+  if(!actifs.length){
+    document.getElementById('targetList').innerHTML='<div style="text-align:center;padding:20px;font-size:0.6rem;color:var(--muted);letter-spacing:0.1em">AUCUNE CIBLE DANS CETTE ZONE</div>';
+    return;
+  }
+
+  var html='';
+  actifs.slice(0,60).forEach(function(p,i){
+    var s=p.scoreF,col=getColor(s),em=getEmoji(s);
+    var cls=i<3?'s1':i<10?'s2':'s3';
+    var factTop=(p._facteurs||[]).slice(0,3);
+
+    // Tags intelligents
+    var tags=[];
+    if(p.ptype==='both')     tags.push({t:'⭐ DOUBLE OP.',c:'#ffd700'});
+    if(isHLM(p))             tags.push({t:'🏢 HLM',c:'#00ccff'});
+    if(isVillageEloigne(p))  tags.push({t:'🌿 VILLAGE',c:'#00ff88'});
+    if(p.ptype==='anniv')    tags.push({t:'🎂 J+'+p.jours_anniv,c:'#ff6eb4'});
+    if(p.source==='daddi')   tags.push({t:'🔵 DADDI',c:'#00aaff'});
+    if(p.locaux>=50)         tags.push({t:'🏙️ '+p.locaux+' LOG',c:'#ff8800'});
+    var visites=vistesVilles[(p.commune||'').toLowerCase()];
+    if(visites&&visites.minJ<30)  tags.push({t:'⚠️ VU '+visites.minJ+'J',c:'#ff4444'});
+    else if(visites&&visites.minJ<90) tags.push({t:'🔄 '+visites.minJ+'J',c:'#ff8800'});
+    else if(!visites&&isVillageEloigne(p)) tags.push({t:'✨ VIERGE',c:'#00ff88'});
+
+    var dist=(p.dist||hav(HOME_LAT,HOME_LON,p.lat||HOME_LAT,p.lon||HOME_LON)).toFixed(1);
+
+    html+='<div class="target-item '+cls+'" onclick="ouvrirDetail(\''+p.id.replace(/'/g,"\\'")+'\')">'
+      +'<div class="t-rank" style="color:'+col+'">'+em+(i+1)+'</div>'
+      +'<div class="t-info">'
+        +'<div class="t-addr">'+p.adresse+'</div>'
+        +'<div class="t-meta">'+p.commune+(p.dept?' ('+p.dept+')':'')+' · '+p.locaux+' LOG · '+dist+'KM'
+          +(p._voisins>0?' · '+p._voisins+' VOISINS':'')
+        +'</div>'
+        +(tags.length?'<div class="t-tags">'+tags.map(function(t){return'<span class="t-tag" style="color:'+t.c+';border-color:'+t.c+'33">'+t.t+'</span>';}).join('')+'</div>':'')
+        // Top facteurs score
+        +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">'
+          +factTop.map(function(f){return'<span style="font-size:0.44rem;color:'+f.c+';opacity:0.8">'+f.f+' '+f.v+'</span>';}).join('<span style="color:var(--muted);font-size:0.44rem"> · </span>')
+        +'</div>'
+      +'</div>'
+      +'<div class="t-score"><div class="t-score-val" style="color:'+col+'">'+s+'</div><div class="t-score-lbl">INTEL</div></div>'
+      +'</div>';
+  });
+  document.getElementById('targetList').innerHTML=html;
+}
+
+function majAnnivs(){
+  var fenetre=parseInt(document.getElementById('filtreAnniv').value)||30;
+  var actifs=annivs.filter(function(a){return!['done','bad','concurrent','signé'].includes(a.action)&&a.jours_anniv<=fenetre;});
+  actifs.sort(function(a,b){return a.jours_anniv-b.jours_anniv;});
+
+  document.getElementById('annivCount').textContent=actifs.length;
+  document.getElementById('scAnniv').textContent=actifs.filter(function(a){return a.jours_anniv<=7;}).length;
+
+  if(!actifs.length){
+    document.getElementById('annivList').innerHTML='<div style="text-align:center;padding:20px;font-size:0.6rem;color:var(--muted);letter-spacing:0.1em;font-family:Chakra Petch,sans-serif">AUCUN ANNIVERSAIRE J+'+fenetre+'</div>';
+    return;
+  }
+
+  var html='';
+  actifs.forEach(function(a){
+    var cls=a.jours_anniv<=7?'crit':a.jours_anniv<=14?'urg':'ok';
+    var col=a.jours_anniv<=7?'var(--red)':a.jours_anniv<=14?'var(--warm)':'var(--green)';
+    var typeLbl=(a.typeAnniv==='2ans'?'2 ANS':'1 AN');
+    html+='<div class="anniv-item '+cls+'" onclick="ouvrirDetail(\''+a.id.replace(/'/g,"\\'")+'\',true)">'
+      +'<div class="a-jda" style="color:'+col+'">J+'+a.jours_anniv+'<span>'+typeLbl+'</span></div>'
+      +'<div class="a-info">'
+        +'<div class="a-addr">'+a.adresse+'</div>'
+        +'<div class="a-meta">'+a.commune+(a.dept?' ('+a.dept+')':'')+' · '+a.locaux+' LOG'+(a.mesc?' · MESC '+a.mesc.substring(0,10):'')+'</div>'
+      +'</div>'
+      +'<div class="a-urgence" style="color:'+col+'">'+(a.jours_anniv<=7?'🔴 CRITIQUE':a.jours_anniv<=14?'🟠 URGENT':'🟢 OK')+'</div>'
+      +'</div>';
+  });
+  document.getElementById('annivList').innerHTML=html;
+}
+
+function majStats(){
+  var total=points.filter(function(p){return!['done','bad','concurrent','signé'].includes(p.action);}).length;
+  document.getElementById('scTotal').textContent=total;
+  document.getElementById('scContrats').textContent=contrats;
+  var taux=portes>0?(contrats/portes*100).toFixed(1):0;
+  document.getElementById('scTaux').textContent=taux+'%';
+
+  // Barres par dept
+  var depts={};
+  points.filter(function(p){return p.dept&&!['done','bad','concurrent','signé'].includes(p.action);}).forEach(function(p){
+    if(!depts[p.dept])depts[p.dept]={scores:[],count:0};
+    depts[p.dept].scores.push(p.scoreF||calcScore(p));depts[p.dept].count++;
+  });
+  var sorted=Object.entries(depts).map(function(e){return{dept:e[0],avg:Math.round(e[1].scores.reduce(function(a,b){return a+b;},0)/e[1].scores.length),count:e[1].count};}).sort(function(a,b){return b.avg-a.avg;}).slice(0,8);
+  var maxAvg=sorted.length?Math.max.apply(null,sorted.map(function(d){return d.avg;})):100;
+  document.getElementById('deptBars').innerHTML=sorted.map(function(d){
+    var col=getColor(d.avg);
+    return'<div class="secteur-item"><div class="sec-lbl">DEPT '+d.dept+' ('+d.count+')</div><div class="sec-bar"><div class="sec-fill" style="width:'+(d.avg/maxAvg*100)+'%;background:'+col+';box-shadow:0 0 5px '+col+'"></div></div><div class="sec-val" style="color:'+col+'">'+d.avg+'</div></div>';
+  }).join('')||'<div style="font-size:0.58rem;color:var(--muted)">Chargez des données</div>';
+}
+
+function majTicker(){
+  var total   = points.filter(function(p){return!['done','bad','concurrent','signé'].includes(p.action);}).length;
+  var totalA  = annivs.filter(function(a){return!['done','bad','concurrent','signé'].includes(a.action);}).length;
+  var urgents = annivs.filter(function(a){return!['done','bad','concurrent','signé'].includes(a.action)&&a.jours_anniv<=7;}).length;
+  var both    = points.filter(function(p){return p.ptype==='both'&&!['done','bad','concurrent','signé'].includes(p.action);}).length;
+  var taux    = portes>0?(contrats/portes*100).toFixed(1):0;
+  var h       = new Date().getHours();
+  var jour    = new Date().getDay();
+
+  // Top 3 adresses par score
+  var top3 = points.filter(function(p){
+    return!['done','bad','concurrent','signé'].includes(p.action)&&p._scoreF>0;
+  }).sort(function(a,b){return(b._scoreF||b.scoreF||0)-(a._scoreF||a.scoreF||0);}).slice(0,3);
+
+  // Anniv les plus urgents
+  var topAnniv = annivs.filter(function(a){
+    return!['done','bad','concurrent','signé'].includes(a.action);
+  }).sort(function(a,b){return a.jours_anniv-b.jours_anniv;}).slice(0,3);
+
+  // Meilleur département
+  var deptScores={};
+  points.filter(function(p){return p.dept&&!['done','bad','concurrent','signé'].includes(p.action);}).forEach(function(p){
+    if(!deptScores[p.dept])deptScores[p.dept]=[];
+    deptScores[p.dept].push(p._scoreF||p.scoreF||p.score||0);
+  });
+  var bestDept=Object.entries(deptScores).map(function(e){
+    return{dept:e[0],avg:Math.round(e[1].reduce(function(a,b){return a+b;},0)/e[1].length)};
+  }).sort(function(a,b){return b.avg-a.avg;})[0];
+
+  // Conseil heure
+  var conseilH = h>=9&&h<=11?'⏰ PEAK MATIN — PROSPECTEZ MAINTENANT':
+                 h>=14&&h<=17?'⏰ PEAK APREM — EXCELLENT MOMENT':
+                 h>=18&&h<=20?'⏰ SOIRÉE — GARDIENS PRÉSENTS':
+                 h<8?'🌙 TROP TÔT — PRÉPAREZ VOTRE CIRCUIT':
+                 '🌆 HORS PEAK — PRIVILÉGIEZ LES APPELS';
+  var classeH  = (h>=9&&h<=11)||(h>=14&&h<=17)?'ok':'warn';
+
+  // Conseil jour
+  var joursNom=['DIM','LUN','MAR','MER','JEU','VEN','SAM'][jour];
+  var conseilJ = jour===0||jour===6?'⚠️ WEEK-END — TAUX CONVERSION -40%':
+                 jour>=2&&jour<=4?'✅ '+joursNom+' — JOUR OPTIMAL PROSPECTION':'📅 '+joursNom;
+  var classeJ  = jour===0||jour===6?'warn':'ok';
+
+  // Construire les items
+  var items = [];
+
+  // Statut système
+  items.push({t:'◈ NEXUS·INTEL', cls:'hot', id:null});
+
+  // Contrats en cours
+  if(contrats>0){
+    items.push({t:'🎉 '+contrats+' CONTRAT'+(contrats>1?'S':'')+' · CONV. '+taux+'%', cls:'ok', id:null});
+  }else{
+    items.push({t:'📊 CONV. '+taux+'% · '+portes+' PORTES', cls:'', id:null});
+  }
+
+  // Anniversaires urgents — clignotants
+  if(urgents>0){
+    items.push({t:'🎂 ALERTE: '+urgents+' ANNIV. CRITIQUE'+(urgents>1?'S':'')+' J+1→7', cls:'crit', id:null});
+  }
+  topAnniv.forEach(function(a){
+    items.push({t:'🎂 J+'+a.jours_anniv+' → '+a.commune.toUpperCase()+' ('+a.locaux+' LOG)', cls:a.jours_anniv<=7?'crit':a.jours_anniv<=14?'warn':'info', id:a.id, isAnniv:true});
+  });
+
+  // Top 3 cibles par score
+  if(top3.length){
+    items.push({t:'🔥 TOP CIBLES', cls:'hot', id:null});
+    top3.forEach(function(p,i){
+      var sc=p._scoreF||p.scoreF||p.score||0;
+      items.push({
+        t:'#'+(i+1)+' '+p.commune.toUpperCase()+' — '+p.locaux+' LOG · INTEL '+sc,
+        cls:sc>=80?'ok':sc>=60?'hot':'warn',
+        id:p.id, isAnniv:false
+      });
+    });
+  }
+
+  // Double opérateur
+  if(both>0){
+    items.push({t:'⭐ '+both+' DOUBLE OP. ORANGE+SFR DISPONIBLES', cls:'hot', id:null});
+  }
+
+  // Meilleur département
+  if(bestDept){
+    items.push({t:'🏆 BEST DEPT: '+bestDept.dept+' (MOY. '+bestDept.avg+'/100)', cls:'ok', id:null});
+  }
+
+  // Conseil heure
+  items.push({t:conseilH, cls:classeH, id:null});
+
+  // Conseil jour
+  items.push({t:conseilJ, cls:classeJ, id:null});
+
+  // Total
+  items.push({t:'📍 '+total+' CIBLES · '+totalA+' ANNIV.', cls:'', id:null});
+  items.push({t:'FIBRE BOUYGUES · AuRA · VALENCE 26', cls:'muted', id:null});
+
+  // Générer HTML cliquable
+  function mkItem(it){
+    var onclick = it.id ? 'onclick="tickerClick(\''+it.id+'\','+(it.isAnniv?'true':'false')+')"' : '';
+    return'<div class="tick-item '+it.cls+'" '+onclick+'>'+it.t+'</div>';
+  }
+
+  var html = items.map(mkItem).join('');
+  html += html; // loop
+  document.getElementById('ticker').innerHTML = html;
+
+  // Adapter vitesse selon urgence
+  var speed = urgents>0?25:contrats>0?35:40;
+  document.querySelector('.bb-ticker-inner').style.animationDuration = speed+'s';
+}
+
+function tickerClick(id, isAnniv){
+  var liste = isAnniv ? annivs : points;
+  var p = liste.find(function(x){return x.id===id;});
+  if(p) ouvrirDetail(id, isAnniv);
+}
+
+// ══════════════════════════════════════════════════
+// DETAIL / FICHE IA
+// ══════════════════════════════════════════════════
+function ouvrirDetail(id,isAnniv){
+  var p=(isAnniv?annivs:points).find(function(x){return x.id===id;});
+  if(!p){p=points.find(function(x){return x.id===id;})||annivs.find(function(x){return x.id===id;});}
+  if(!p)return;
+  selectedPoint=p;portes++;
+
+  var s=p.scoreF||calcScore(p);
+  var col=getColor(s);
+  document.getElementById('detScore').textContent=s;
+  document.getElementById('detScore').style.color=col;
+  document.getElementById('detScore').style.textShadow='0 0 15px '+col;
+  document.getElementById('detAddr').textContent=p.adresse;
+  document.getElementById('detAddr').style.color=col;
+  document.getElementById('detSub').textContent=(p.commune||'')+(p.dept?' ('+p.dept+')':'')+' · Score '+s;
+  document.getElementById('detBarFill').style.width=s+'%';
+  document.getElementById('detBarFill').style.background=col;
+  document.getElementById('detBarFill').style.boxShadow='0 0 8px '+col;
+  document.getElementById('detLog').textContent=p.locaux||'—';
+  document.getElementById('detDist').textContent=(p.dist||hav(HOME_LAT,HOME_LON,p.lat||HOME_LAT,p.lon||HOME_LON)).toFixed(1)+' KM';
+  document.getElementById('detType').textContent=(p.ptype||'orange').toUpperCase();
+  document.getElementById('detNote').value=p.note||'';
+
+  // Afficher loading fiche
+  document.getElementById('ficheContent').innerHTML='<div class="fiche-loading"><div class="fl-dot"></div><div class="fl-dot"></div><div class="fl-dot"></div>&nbsp;&nbsp;ANALYSE IA EN COURS...</div>';
+  document.getElementById('detailOverlay').classList.add('on');
+
+  // Générer fiche IA
+  genFiche(p);
+}
+
+async function genFiche(p){
+  var histo=histoImmeuble[p.id]||[];
+  var visites=vistesVilles[(p.commune||'').toLowerCase()];
+  var hlm=isHLM(p)?'HLM/bailleur social':'résidentiel';
+  var village=isVillageEloigne(p)?'ZONE ISOLÉE (potentiel élevé, peu prospecté)':'zone standard';
+  var facteurs=(p._facteurs||[]).map(function(f){return f.f+'('+f.v+'pts)';}).join(', ');
+  var isVierge=!visites&&isVillageEloigne(p);
+
+  // Afficher facteurs pendant chargement IA
+  var facteursHtml='';
+  if(p._facteurs&&p._facteurs.length){
+    facteursHtml='<div style="margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(255,102,0,0.15)">';
+    facteursHtml+=p._facteurs.map(function(f){
+      var isPos=f.v.startsWith('+');
+      return'<span style="font-size:0.52rem;color:'+(isPos?f.c:'#ff4444')+';margin-right:8px;display:inline-block">'+f.f+' <b>'+f.v+'</b></span>';
+    }).join('');
+    facteursHtml+='</div>';
+  }
+
+  document.getElementById('ficheContent').innerHTML=facteursHtml+'<div class="fiche-loading"><div class="fl-dot"></div><div class="fl-dot"></div><div class="fl-dot"></div>&nbsp;&nbsp;ANALYSE CLAUDE IA...</div>';
+
+  var prompt='Tu es expert prospection fibre Bouygues Telecom AuRA. Génère une fiche ULTRA-COURTE:\n'+
+    'Adresse: '+p.adresse+'\nVille: '+p.commune+' ('+p.dept+')\n'+
+    'Profil: '+p.locaux+' logements, '+hlm+', '+village+'\n'+
+    'Score INTEL: '+p.scoreF+'/100\n'+
+    'Facteurs clés: '+facteurs+'\n'+
+    (p.ptype==='anniv'?'🎂 ANNIVERSAIRE PLEIN TARIF J+'+p.jours_anniv+' ('+p.typeAnniv+')\n':'')+
+    (p.ptype==='both'?'⭐ ÉLIGIBLE ORANGE ET SFR\n':'')+
+    (isVierge?'✨ ZONE POTENTIELLEMENT VIERGE — Jamais prospecté\n':'')+
+    (visites?'Visité '+visites.nb+'x (dernière fois il y a '+visites.minJ+' jours)\n':'')+
+    (p.mesc&&p.mesc!=='2050-01-01'?'Date MESC: '+p.mesc+'\n':'')+
+    '\nFormat EXACT (court et percutant):\n'+
+    '⚡ PROFIL: (3 mots)\n'+
+    '🎯 ACCROCHE: (1 phrase choc)\n'+
+    '⚠️ RISQUE: (1 objection probable)\n'+
+    '💡 PARADE: (réponse en 1 phrase)\n'+
+    '📍 TIMING: (moment optimal)\n'+
+    '🏆 POTENTIEL: (estimation nb contrats possibles)';
+
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:250,messages:[{role:'user',content:prompt}]})
+    });
+    var d=await resp.json();
+    var txt=d.content&&d.content[0]?d.content[0].text:'Analyse indisponible.';
+    txt=txt.replace(/⚡/g,'<span style="color:var(--fire)">⚡</span>')
+           .replace(/🎯/g,'<span style="color:var(--green)">🎯</span>')
+           .replace(/⚠️/g,'<span style="color:var(--warm)">⚠️</span>')
+           .replace(/💡/g,'<span style="color:var(--ember)">💡</span>')
+           .replace(/📍/g,'<span style="color:var(--cyan)">📍</span>')
+           .replace(/🏆/g,'<span style="color:var(--fire3)">🏆</span>')
+           .replace(/\n/g,'<br>');
+    document.getElementById('ficheContent').innerHTML=facteursHtml+txt;
+  }catch(e){
+    document.getElementById('ficheContent').innerHTML=facteursHtml+'Connexion IA indisponible.';
+  }
+}
+
+function fermerDetail(){
+  if(selectedPoint)selectedPoint.note=document.getElementById('detNote').value.trim();
+  document.getElementById('detailOverlay').classList.remove('on');
+  selectedPoint=null;
+}
+
+function addNtag(t){var i=document.getElementById('detNote');i.value=(i.value?i.value+' · ':'')+t;}
+
+function detAction(type){
+  if(!selectedPoint)return;
+  var p=selectedPoint;
+  p.note=document.getElementById('detNote').value.trim();p.action=type;
+  if(!histoImmeuble[p.id])histoImmeuble[p.id]=[];
+  histoImmeuble[p.id].push({date:new Date().toLocaleDateString('fr'),action:type,note:p.note});
+  if(type==='signé'){contrats++;toast('🎉 CONTRAT SIGNÉ !','ok');}
+  if(!['revoir','verifier'].includes(type))traites.push(Object.assign({},p));
+
+  // Log
+  var logEl=document.getElementById('actionsLog');
+  var icones={signé:'🎉',done:'✅',concurrent:'🔴',vide:'🏚',revoir:'🔄',bad:'❌',verifier:'🔍'};
+  var div=document.createElement('div');
+  div.style.cssText='font-size:0.55rem;color:var(--muted);padding:2px 0;border-bottom:1px solid var(--border);letter-spacing:0.04em;';
+  div.textContent=(icones[type]||'·')+' '+type.toUpperCase()+' · '+p.commune+' · '+new Date().toLocaleTimeString('fr');
+  logEl.insertBefore(div,logEl.firstChild);
+
+  fermerDetail();majAll();
+  var labels={signé:'CONTRAT !',done:'PROSPECTÉ',concurrent:'CONCURRENT',vide:'VIDE',bad:'RETIRÉ',revoir:'À REVOIR',verifier:'À VÉRIFIER'};
+  if(type!=='signé')toast(labels[type]||'OK');
+}
+
+// ══════════════════════════════════════════════════
+// CONSEIL IA
+// ══════════════════════════════════════════════════
+function quickConseil(msg){document.getElementById('conseilInput').value=msg;envoyerConseil();}
+
+async function envoyerConseil(){
+  var input=document.getElementById('conseilInput');
+  var msg=input.value.trim();if(!msg)return;input.value='';
+
+  var div=document.createElement('div');div.className='c-msg user';div.textContent=msg;
+  document.getElementById('conseilMsgs').appendChild(div);
+
+  var typing=document.createElement('div');typing.className='c-typing';
+  typing.innerHTML='<span></span><span></span><span></span>';
+  document.getElementById('conseilMsgs').appendChild(typing);
+  scrollConseil();
+  document.getElementById('aiStatusLbl').textContent='ANALYSE...';
+
+  // Contexte secteur
+  var total=points.filter(function(p){return!['done','bad','concurrent','signé'].includes(p.action);}).length;
+  var annivUrg=annivs.filter(function(a){return a.jours_anniv<=7;}).length;
+  var both=points.filter(function(p){return p.ptype==='both';}).length;
+  var hlmCount=points.filter(function(p){return isHLM(p)&&!['done','bad','concurrent','signé'].includes(p.action);}).length;
+  var villageCount=points.filter(function(p){return isVillageEloigne(p)&&!['done','bad','concurrent','signé'].includes(p.action);}).length;
+  var top3=points.filter(function(p){return!['done','bad','concurrent','signé'].includes(p.action);}).sort(function(a,b){return(b.scoreF||0)-(a.scoreF||0);}).slice(0,3).map(function(p){return p.commune+'('+p.locaux+'log,sc'+(p.scoreF||0)+')';}).join(',');
+
+  var sys='Tu es NEXUS·INTEL, conseiller IA expert prospection fibre Bouygues Telecom AuRA. '+
+    'Secteur: '+total+' adresses actives dont '+both+' Orange+SFR, '+hlmCount+' HLM, '+villageCount+' villages éloignés, '+annivUrg+' anniversaires urgents. '+
+    'Top zones: '+top3+'. '+
+    'Contrats session: '+contrats+', taux '+(portes>0?(contrats/portes*100).toFixed(1):0)+'%. '+
+    'Réponds en expert terrain: concis, chiffré, actionnable. Emojis. Max 150 mots.';
+
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sys,messages:[{role:'user',content:msg}]})
+    });
+    var d=await resp.json();
+    typing.remove();
+    var rep=d.content&&d.content[0]?d.content[0].text:'Erreur connexion.';
+    var rdiv=document.createElement('div');rdiv.className='c-msg ia';rdiv.textContent=rep;
+    document.getElementById('conseilMsgs').appendChild(rdiv);
+    document.getElementById('aiStatusLbl').textContent='PRÊT';
+  }catch(e){typing.remove();var ed=document.createElement('div');ed.className='c-msg ia';ed.textContent='Connexion IA indisponible.';document.getElementById('conseilMsgs').appendChild(ed);document.getElementById('aiStatusLbl').textContent='HORS LIGNE';}
+  scrollConseil();
+}
+
+function scrollConseil(){var m=document.getElementById('conseilMsgs');m.scrollTop=m.scrollHeight;}
+
+// ══════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════
+function exporterCircuit(){
+  var actifs=points.filter(function(p){return!['done','bad','concurrent','signé'].includes(p.action);}).sort(function(a,b){return(b.scoreF||0)-(a.scoreF||0);}).slice(0,25);
+  if(!actifs.length){toast('AUCUNE CIBLE',true);return;}
+  var csv='adresse;commune;dept;locaux;lat;lon;score;ptype;dist\n';
+  actifs.forEach(function(p){csv+=p.adresse+';'+p.commune+';'+p.dept+';'+p.locaux+';'+(p.lat||'')+';'+(p.lon||'')+';'+(p.scoreF||p.score||0)+';'+p.ptype+';'+(p.dist||0).toFixed(1)+'\n';});
+  dl(csv,'nexus_circuit_'+today()+'.csv');toast(actifs.length+' ADRESSES EXPORTÉES');
+}
+function exporterTraites(){
+  if(!traites.length){toast('AUCUN TRAITÉ',true);return;}
+  var csv='adresse;commune;dept;locaux;action;note;ptype\n';
+  traites.forEach(function(p){csv+=p.adresse+';'+p.commune+';'+p.dept+';'+p.locaux+';'+p.action+';'+(p.note||'')+';'+p.ptype+'\n';});
+  dl(csv,'nexus_traites_'+today()+'.csv');toast(traites.length+' TRAITÉS EXPORTÉS');
+}
+function dl(csv,nom){var url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv'}));Object.assign(document.createElement('a'),{href:url,download:nom}).click();URL.revokeObjectURL(url);}
+function resetSession(){if(!confirm('RESET SESSION ?'))return;contrats=0;portes=0;traites=[];actions=[];majAll();toast('SESSION RÉINITIALISÉE');}
+
+// TOAST
+var _tt;
+function toast(msg,type){
+  var t=document.getElementById('toast');t.textContent=msg;
+  t.className='toast on '+(type==='true'||type===true?'err':type==='ok'?'ok':'');
+  clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('on');},3000);
+}
+
+// Init
+document.getElementById('statsDate').textContent=new Date().toLocaleDateString('fr');
+// Ticker auto-refresh
+setInterval(majTicker, 30000);
+</script>
+</body>
+</html>

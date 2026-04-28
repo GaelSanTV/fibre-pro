@@ -80,11 +80,11 @@ input[type=file]{display:none;}
 .lc-t{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--gold);margin-top:2px;}
 
 /* LEGEND */
-.legend-wrap{position:absolute;bottom:10px;right:10px;z-index:500;background:rgba(9,9,15,0.95);border:1px solid var(--border);border-radius:10px;padding:10px 12px;pointer-events:auto;}
-.leg-r{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:0.6rem;color:var(--muted);}
+.legend-wrap{position:absolute;bottom:10px;right:10px;z-index:500;background:rgba(9,9,15,0.92);border:1px solid var(--border);border-radius:8px;padding:8px 10px;pointer-events:auto;max-width:130px;}
+.leg-r{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:0.58rem;color:var(--muted);}
 .leg-r:last-child{margin-bottom:0;}
-.leg-d{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.leg-sep{width:100%;height:1px;background:var(--border);margin:5px 0;}
+.leg-d{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.leg-sep{width:100%;height:1px;background:var(--border);margin:4px 0;}
 
 /* ACTION SHEET */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:2000;display:none;}
@@ -149,7 +149,8 @@ input[type=file]{display:none;}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
 
 ::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-.leaflet-tooltip{background:rgba(9,9,15,0.95)!important;border:1px solid var(--border2)!important;color:var(--text)!important;font-family:'Syne',sans-serif!important;font-size:0.7rem!important;padding:5px 9px!important;border-radius:6px!important;box-shadow:none!important;}
+.leaflet-tooltip{background:rgba(9,9,15,0.95)!important;border:1px solid var(--border2)!important;color:var(--text)!important;font-family:'Syne',sans-serif!important;font-size:0.7rem!important;padding:6px 10px!important;border-radius:6px!important;box-shadow:0 4px 16px rgba(0,0,0,0.5)!important;pointer-events:none!important;}
+.fm-tooltip{background:rgba(9,9,15,0.97)!important;border:1px solid rgba(255,255,255,0.15)!important;color:var(--text)!important;font-family:'Syne',sans-serif!important;font-size:0.72rem!important;padding:8px 12px!important;border-radius:8px!important;box-shadow:0 4px 20px rgba(0,0,0,0.6)!important;line-height:1.5!important;}
 </style>
 </head>
 <body>
@@ -191,15 +192,28 @@ input[type=file]{display:none;}
   </div>
 
   <div class="legend-wrap" id="legendWrap">
-    <div class="leg-r"><div class="leg-d" style="background:var(--gold)"></div>⭐ Orange+SFR</div>
-    <div class="leg-r"><div class="leg-d" style="background:var(--orange)"></div>🟠 Orange</div>
-    <div class="leg-r"><div class="leg-d" style="background:var(--purple)"></div>🔴 SFR</div>
-    <div class="leg-r"><div class="leg-d" style="background:var(--pink)"></div>🎂 Anniversaire</div>
-    <div class="leg-sep"></div>
-    <div class="leg-r"><div class="leg-d" style="background:#ff2d55;opacity:0.5"></div>🔥 &lt;30j</div>
-    <div class="leg-r"><div class="leg-d" style="background:#ff9f0a;opacity:0.5"></div>🟠 30-90j</div>
-    <div class="leg-r"><div class="leg-d" style="background:#30d158;opacity:0.5"></div>🟢 90-180j</div>
-    <div class="leg-r"><div class="leg-d" style="background:#0a84ff;opacity:0.5"></div>🔵 &gt;180j</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:0.55rem;color:var(--muted);font-family:Space Mono,monospace;text-transform:uppercase;letter-spacing:0.08em">Légende</span>
+      <button onclick="toggleEditLegend()" style="background:none;border:none;color:var(--muted);font-size:0.65rem;cursor:pointer;padding:0 2px">✏️</button>
+    </div>
+    <div id="legendItems">
+      <div class="leg-r"><div class="leg-d" style="background:var(--gold)"></div><span>⭐ Orange+SFR</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:var(--orange)"></div><span>🟠 Orange</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:var(--purple)"></div><span>🔴 SFR</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:var(--pink)"></div><span>🎂 Anniversaire</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:var(--blue)"></div><span>🔵 DADDI</span></div>
+      <div class="leg-sep"></div>
+      <div class="leg-r"><div class="leg-d" style="background:#ff2d55;opacity:0.6"></div><span>🔥 Visité &lt;30j</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#ff9f0a;opacity:0.6"></div><span>🟠 30-90j</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#30d158;opacity:0.6"></div><span>🟢 90-180j</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#0a84ff;opacity:0.6"></div><span>🔵 &gt;180j</span></div>
+    </div>
+    <!-- MODE EDIT -->
+    <div id="legendEdit" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+      <div style="font-size:0.6rem;color:var(--muted);margin-bottom:6px">Modifier les libellés :</div>
+      <div id="legendEditItems"></div>
+      <button onclick="sauvegarderLegend()" style="width:100%;margin-top:6px;padding:5px;background:var(--blue);border:none;border-radius:4px;color:#000;font-size:0.65rem;font-weight:700;cursor:pointer">💾 Sauvegarder</button>
+    </div>
   </div>
 </div>
 
@@ -226,6 +240,10 @@ input[type=file]{display:none;}
     <input type="file" id="fAnniv" accept=".csv" onchange="importerFichier(event,'anniv')">
     <div class="iz" onclick="document.getElementById('fChaleur').click()"><div class="iz-ic">🔥</div><div class="iz-t">Historique prospection</div><div class="iz-s">villes_dates.csv</div></div>
     <input type="file" id="fChaleur" accept=".csv" onchange="importerChaleur(event)">
+    <div class="iz" onclick="document.getElementById('fDADDI').click()"><div class="iz-ic">🔵</div><div class="iz-t">DADDI AuRA Export</div><div class="iz-s">DADDI_AuRA_XXXX-XX-XX.csv — géocodage auto</div></div>
+    <input type="file" id="fDADDI" accept=".csv" onchange="importerDADDI(event)">
+    <div class="iz" onclick="document.getElementById('fAnnivD').click()"><div class="iz-ic">🎂</div><div class="iz-t">DADDI Anniversaires</div><div class="iz-s">DADDI_Anniversaires_XXXX.csv — géocodage auto</div></div>
+    <input type="file" id="fAnnivD" accept=".csv" onchange="importerAnnivDADDI(event)">
     <button class="modal-close" onclick="fermerImport()">✕ Fermer</button>
   </div>
 </div>
@@ -285,6 +303,7 @@ input[type=file]{display:none;}
 // STATE — global pour être accessible partout
 // ═══════════════════════════════════════════
 var points = [], traites = [], chaleurVilles = [], itineraire = [];
+var vistesVilles = {}; // commune → {nb, minJ}
 var histoImmeuble = {};
 var scoreMin = 0, clusterOn = true;
 var contrats = 0, portes = 0;
@@ -292,7 +311,8 @@ var selectedPoint = null;
 var layersOn = {orange:true,sfr:true,both:true,anniv:true,chaleur:true};
 
 // Layers — initialisés après load
-var map, layerOrange, layerSFR, layerBoth, layerAnniv, layerChaleur;
+var map, layerOrange, layerSFR, layerBoth, layerAnniv, layerChaleur, layerDADDI;
+var layersOn = {orange:true,sfr:true,both:true,anniv:true,chaleur:true,daddi:true};
 
 // ═══════════════════════════════════════════
 // INIT MAP
@@ -302,28 +322,28 @@ document.addEventListener('DOMContentLoaded', function(){
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
   L.control.zoom({position:'bottomright'}).addTo(map);
 
-  var clOpts = {
-    maxClusterRadius:60,
-    iconCreateFunction: function(c){
-      var n=c.getChildCount(), sz=n<10?28:n<50?34:40;
-      return L.divIcon({
-        html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:rgba(0,200,255,0.25);border:2px solid rgba(0,200,255,0.5);display:flex;align-items:center;justify-content:center;font-family:Space Mono,monospace;font-size:'+(n<10?'0.72':'0.62')+'rem;font-weight:700;color:#00c8ff">'+n+'</div>',
-        className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2]
-      });
-    }
-  };
+  function makeClusterOpts(col, shadow){
+    return {
+      maxClusterRadius: 50,
+      iconCreateFunction: function(c){
+        var n = c.getChildCount();
+        var sz = n<10?32:n<50?38:46;
+        return L.divIcon({
+          html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+col+'33;border:3px solid '+col+';display:flex;align-items:center;justify-content:center;font-family:Space Mono,monospace;font-size:'+(n<100?'0.75':'0.62')+'rem;font-weight:700;color:'+col+';box-shadow:0 0 12px '+col+'55;text-shadow:0 0 4px '+col+'">'+n+'</div>',
+          className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2]
+        });
+      }
+    };
+  }
 
-  layerOrange  = L.markerClusterGroup(clOpts);
-  layerSFR     = L.markerClusterGroup(clOpts);
-  layerBoth    = L.markerClusterGroup(clOpts);
-  layerAnniv   = L.markerClusterGroup(clOpts);
+  layerOrange  = L.markerClusterGroup(makeClusterOpts('#ff8c00','#ff8c00'));
+  layerSFR     = L.markerClusterGroup(makeClusterOpts('#b06cff','#b06cff'));
+  layerBoth    = L.markerClusterGroup(makeClusterOpts('#ffd700','#ffd700'));
+  layerAnniv   = L.markerClusterGroup(makeClusterOpts('#ff6eb4','#ff6eb4'));
+  layerDADDI   = L.markerClusterGroup(makeClusterOpts('#00c8ff','#00c8ff'));
   layerChaleur = L.layerGroup();
 
-  map.addLayer(layerOrange);
-  map.addLayer(layerSFR);
-  map.addLayer(layerBoth);
-  map.addLayer(layerAnniv);
-  map.addLayer(layerChaleur);
+  [layerOrange,layerSFR,layerBoth,layerAnniv,layerDADDI,layerChaleur].forEach(function(l){map.addLayer(l);});
 
   map.on('click', function(){
     document.getElementById('searchResults').style.display = 'none';
@@ -336,6 +356,7 @@ document.addEventListener('DOMContentLoaded', function(){
 function getColor(p){
   if(p.ptype==='both')  return '#ffd700';
   if(p.ptype==='sfr')   return '#b06cff';
+  if(p.ptype==='daddi') return '#00c8ff';
   if(p.ptype==='anniv') return p.jours_anniv<=7?'#ff2d55':p.jours_anniv<=20?'#ff9f0a':'#30d158';
   var c=p.couleur;
   if(c==='red')    return '#ff3355';
@@ -343,38 +364,138 @@ function getColor(p){
   if(c==='blue')   return '#00c8ff';
   return '#00d46a';
 }
-function getSize(p){ return p.ptype==='both'?18:p.locaux>=30?18:p.locaux>=10?14:11; }
+function getSize(p){
+  if(p.ptype==='both') return 22;
+  if(p.locaux>=30) return 22;
+  if(p.locaux>=10) return 18;
+  return 14;
+}
 function getLayer(p){
   if(p.ptype==='both')  return layerBoth;
   if(p.ptype==='sfr')   return layerSFR;
   if(p.ptype==='anniv') return layerAnniv;
+  if(p.ptype==='daddi') return layerDADDI;
   return layerOrange;
 }
-function hav(a,b,c,d){var R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180,e=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2;return R*2*Math.atan2(Math.sqrt(e),Math.sqrt(1-e));}
-function today(){return new Date().toISOString().split('T')[0];}
+// ═══════════════════════════════════════════
+// ALGO SCORING SURPUISSANT (même que NEXUS·INTEL)
+// ═══════════════════════════════════════════
+var GRANDES_VILLES_FM={'grenoble':30,'lyon':35,'avignon':28,'saint-etienne':20,'annecy':22,'chambery':18,'valence':15};
+var ZONES_SKI_FM=['chamonix','megeve','courchevel','tignes','val d\'isere','morzine','les arcs','serre chevalier','alpe d\'huez'];
+var ZONES_BLANCHES_FM=['07','26','42','43','05'];
+
+function calcScoreFM(p){
+  var s=0, lat=p.lat||44.93, lon=p.lon||4.89;
+  var dist=p.dist||hav(44.9334,4.8924,lat,lon);
+  var com=(p.commune||'').toLowerCase();
+  var adr=(p.adresse||'').toLowerCase();
+  var h=new Date().getHours(), jour=new Date().getDay();
+
+  // Base ARCEP
+  s += Math.min(40,(p.score||0)*0.4);
+  // Locaux
+  var loc=p.locaux||0;
+  s += loc>=100?20:loc>=50?17:loc>=30?14:loc>=20?11:loc>=10?8:loc>=6?4:1;
+  // Double op
+  if(p.ptype==='both') s+=25;
+  // Anniversaire
+  if(p.ptype==='anniv'){var jda=p.jours_anniv||0;s+=jda<=7?30:jda<=14?25:jda<=21?18:12;}
+  // Couleur passe
+  var c=p.couleur;
+  if(c==='red')s+=15;else if(c==='orange')s+=10;else if(c==='blue')s+=8;else if(c==='green')s+=5;
+  // Distance
+  s+=dist<=5?12:dist<=10?10:dist<=15?8:dist<=25?6:dist<=40?3:0;
+  // Village isolé
+  var isGV=Object.keys(GRANDES_VILLES_FM).some(function(v){return com.includes(v);});
+  if(!isGV&&dist>20){s+=12;if(loc>=15)s+=6;}
+  // HLM
+  var hlmK=['hlm','opac','bailleur','social','habitat','foyer','cité','alliade','domial'];
+  if(hlmK.some(function(k){return adr.includes(k)||com.includes(k);})||loc>=50)s+=10;
+  // Zone blanche
+  if(ZONES_BLANCHES_FM.includes(p.dept||''))s+=8;
+  // Heure
+  if(h>=9&&h<=11)s+=10;else if(h>=14&&h<=17)s+=8;else if(h<8||h>20)s-=12;
+  // Jour
+  if(jour===0||jour===6)s-=15;else if(jour>=2&&jour<=4)s+=8;
+  // Grande ville malus
+  var malusGV=0;
+  Object.entries(GRANDES_VILLES_FM).forEach(function(e){if(com.includes(e[0]))malusGV=Math.max(malusGV,e[1]);});
+  s-=malusGV;
+  // Ski malus
+  if(ZONES_SKI_FM.some(function(z){return com.includes(z);}))s-=18;
+  // Historique
+  var visites=null;
+  Object.keys(vistesVilles||{}).forEach(function(v){if(v.toLowerCase()===com||com.includes(v.toLowerCase()))visites=vistesVilles[v];});
+  if(visites){
+    var j=visites.minJ;
+    s-=j<15?30:j<30?22:j<60?14:j<90?8:j<180?4:0;
+    s-=Math.min(visites.nb*3,15);
+  }
+  // MESC urgence
+  if(p.mesc&&p.mesc!=='2050-01-01'&&p.mesc.length>=8){
+    try{var md=new Date(p.mesc),jr=Math.floor((md-new Date())/86400000);if(jr>=0&&jr<=90)s+=20;else if(jr<=180)s+=12;else if(jr<=365)s+=6;}catch(e){}
+  }
+  // DADDI source
+  if(p.source==='daddi')s+=5;
+  // Zone vierge
+  if(!visites&&dist>=15)s+=5;
+
+  return Math.max(0,Math.min(100,Math.round(s)));
+}
 
 // ═══════════════════════════════════════════
 // MARKERS
 // ═══════════════════════════════════════════
 function placerMarkers(){
   if(!map) return;
-  layerOrange.clearLayers();
-  layerSFR.clearLayers();
-  layerBoth.clearLayers();
-  layerAnniv.clearLayers();
+  [layerOrange,layerSFR,layerBoth,layerAnniv,layerDADDI].forEach(function(l){l.clearLayers();});
 
   var actifs = points.filter(function(p){
     return !['done','bad','concurrent','signé'].includes(p.action) && p.score >= scoreMin;
   });
 
+  // Calculer score surpuissant sur tous les points
+  actifs.forEach(function(p){
+    p._scoreFM = calcScoreFM(p);
+  });
+
   actifs.forEach(function(p){
     var col=getColor(p), sz=getSize(p);
+    var isBoth = p.ptype==='both';
+    var isAnniv = p.ptype==='anniv';
+    var isDaddi = p.ptype==='daddi';
+    var sf = p._scoreFM || p.score || 0;
+
+    // Marqueur avec label commune + score
+    var showLabel = p.locaux >= 15;
+    var html = '<div style="position:relative;display:flex;flex-direction:column;align-items:center;">';
+    html += '<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+col+';border:3px solid rgba(0,0,0,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.5),0 0 '+(isBoth?'18px '+col+',0 0 30px '+col+'44':'6px '+col+'88')+';display:flex;align-items:center;justify-content:center;font-family:Space Mono,monospace;font-size:0.52rem;font-weight:700;color:rgba(0,0,0,0.85)">';
+    html += isAnniv ? '🎂' : isDaddi ? '🔵' : (p.locaux>=10 ? p.locaux : '');
+    html += '</div>';
+    if(showLabel){
+      html += '<div style="background:rgba(0,0,0,0.8);color:'+col+';font-size:0.48rem;padding:1px 4px;border-radius:3px;margin-top:1px;white-space:nowrap;font-family:Space Mono,monospace;max-width:75px;overflow:hidden;text-overflow:ellipsis">'+p.commune+' '+sf+'</div>';
+    }
+    html += '</div>';
+
+    var totalH = sz + (showLabel ? 14 : 0);
     var icon = L.divIcon({
-      html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+col+';border:2px solid rgba(0,0,0,0.5);'+(p.ptype==='both'?'box-shadow:0 0 8px '+col:'')+'"></div>',
-      className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2]
+      html: html,
+      className: '',
+      iconSize: [sz, totalH],
+      iconAnchor: [sz/2, sz/2]
     });
+
     var m = L.marker([p.lat, p.lon], {icon:icon});
-    m.bindTooltip(p.adresse+'<br><span style="color:'+col+'">'+p.locaux+' log</span>'+(p.score?' · '+p.score+'pts':''), {direction:'top', offset:[0,-sz/2]});
+
+    var tooltipHtml =
+      '<b style="color:'+col+'">'+p.adresse.substring(0,35)+'</b><br>'+
+      '<span style="color:#aaa">'+p.commune+(p.dept?' ('+p.dept+')':'')+'</span><br>'+
+      '🏢 '+p.locaux+' log'+(p.score?' · ⭐ ARCEP '+p.score:'')+'<br>'+
+      '🧠 INTEL '+sf+'/100'+
+      (p.ptype==='anniv'?' · 🎂 J+'+p.jours_anniv:'')+
+      (p.mesc&&p.mesc!=='2050-01-01'?' · 📅 MESC '+p.mesc:'');
+
+    m.bindTooltip(tooltipHtml, {direction:'top', offset:[0,-sz/2], className:'fm-tooltip'});
     (function(pt){ m.on('click', function(){ ouvrirSheet(pt); }); })(p);
     getLayer(p).addLayer(m);
   });
@@ -398,52 +519,107 @@ function importerFichier(event, type){
     if(lines.length < 2){ toast('❌ Fichier invalide'); return; }
     var sep = lines[0].includes(';') ? ';' : ',';
     var h = lines[0].split(sep).map(function(v){return v.trim().replace(/"/g,'').toLowerCase();});
+
+    // Détection automatique du format
+    var isDaddi  = h.some(function(v){return v.includes('nomvoie')||v.includes('nom_voie')||v.includes('numerovoi');});
+    var isAnniv  = h.some(function(v){return v.includes('type_anniv')||v.includes('jours_depuis')||v.includes('mescdate');});
+
     var fi = {
-      adresse:  h.findIndex(function(v){return v==='adresse';}),
-      commune:  h.findIndex(function(v){return v.includes('commune');}),
-      dept:     h.findIndex(function(v){return v==='dept'||v==='dpt';}),
-      locaux:   h.findIndex(function(v){return v==='locaux'||v.includes('logloc')||v==='nb';}),
-      lat:      h.findIndex(function(v){return v==='lat'||v==='ban_lat';}),
-      lon:      h.findIndex(function(v){return v==='lon'||v==='ban_lon';}),
-      couleur:  h.findIndex(function(v){return v==='couleur';}),
-      score:    h.findIndex(function(v){return v==='score';}),
-      operateur:h.findIndex(function(v){return v==='operateur';}),
-      jours:    h.findIndex(function(v){return v.includes('jours_depuis_anniv');}),
-      mesc:     h.findIndex(function(v){return v.includes('mesc');}),
+      // Colonnes standard fusion_orange_sfr.csv
+      adresse:   h.findIndex(function(v){return v==='adresse';}),
+      commune:   h.findIndex(function(v){return v.includes('commune');}),
+      dept:      h.findIndex(function(v){return v==='dept'||v==='dpt'||v==='code_dept';}),
+      locaux:    h.findIndex(function(v){return v==='locaux'||v.includes('logloc')||v==='nb'||v==='nombrelogement'||v==='nombre_logements';}),
+      lat:       h.findIndex(function(v){return v==='lat'||v==='ban_lat'||v==='latitude';}),
+      lon:       h.findIndex(function(v){return v==='lon'||v==='ban_lon'||v==='longitude';}),
+      couleur:   h.findIndex(function(v){return v==='couleur';}),
+      score:     h.findIndex(function(v){return v==='score';}),
+      operateur: h.findIndex(function(v){return v==='operateur';}),
+      jours:     h.findIndex(function(v){return v.includes('jours_depuis_anniv');}),
+      mesc:      h.findIndex(function(v){return v.includes('mesc')||v.includes('mescdate');}),
+      // Colonnes DADDI
+      numero:    h.findIndex(function(v){return v.includes('numerovoi')||v==='numerovoi'||v==='numero_voie';}),
+      nomVoie:   h.findIndex(function(v){return v.includes('nomvoie')||v==='nom_voie'||v==='nomvoie';}),
+      cp:        h.findIndex(function(v){return v==='codepostal'||v==='code_postal'||v==='codepost';}),
+      communeD:  h.findIndex(function(v){return v==='commune';}),
+      // Colonnes AnnivFibre
+      typeAnniv: h.findIndex(function(v){return v==='type_anniv';}),
+      joursAnniv:h.findIndex(function(v){return v==='jours_depuis_anniv';}),
     };
+
     var added = 0;
     for(var i=1; i<lines.length; i++){
       var c = lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
-      var lat = parseFloat(c[fi.lat]), lon = parseFloat(c[fi.lon]);
-      if(isNaN(lat)||isNaN(lon)) continue;
-      var adr = fi.adresse>=0 ? c[fi.adresse] : '';
-      if(!adr) continue;
+      if(c.length < 3) continue;
+
+      var lat, lon, adr, commune, dept, nb, jda=0, ptype=type;
+
+      if(isDaddi){
+        // Format DADDI — pas de lat/lon direct, on construit l'adresse
+        var num  = fi.numero>=0  ? c[fi.numero]  : '';
+        var voie = fi.nomVoie>=0 ? c[fi.nomVoie] : '';
+        var cp   = fi.cp>=0      ? c[fi.cp]       : '';
+        var com  = fi.communeD>=0? c[fi.communeD] : '';
+        if(!voie||!cp) continue;
+        adr     = (num+' '+voie).trim()+', '+cp+' '+com;
+        commune = com;
+        dept    = cp.substring(0,2);
+        nb      = fi.locaux>=0 ? parseInt(c[fi.locaux])||0 : 0;
+        // Coordonnées — DADDI n'a pas de lat/lon → on skip ou on géocode
+        // On les met à 0 pour l'instant → point invisible mais dans la liste
+        var latD = fi.lat>=0 ? parseFloat(c[fi.lat]) : NaN;
+        var lonD = fi.lon>=0 ? parseFloat(c[fi.lon]) : NaN;
+        if(isNaN(latD)||isNaN(lonD)) continue; // Pas de coords → skip carte
+        lat = latD; lon = lonD;
+        ptype = 'orange';
+      } else if(isAnniv){
+        // Format AnnivFibre
+        adr     = fi.adresse>=0 ? c[fi.adresse] : '';
+        commune = fi.commune>=0 ? c[fi.commune] : '';
+        dept    = fi.dept>=0    ? c[fi.dept]    : '';
+        nb      = fi.locaux>=0  ? parseInt(c[fi.locaux])||0 : 0;
+        jda     = fi.joursAnniv>=0 ? parseInt(c[fi.joursAnniv])||0 : 0;
+        lat     = fi.lat>=0 ? parseFloat(c[fi.lat]) : NaN;
+        lon     = fi.lon>=0 ? parseFloat(c[fi.lon]) : NaN;
+        if(!adr||isNaN(lat)||isNaN(lon)) continue;
+        if(jda<=0||jda>30) continue;
+        ptype = 'anniv';
+      } else {
+        // Format standard fusion_orange_sfr.csv
+        lat     = fi.lat>=0  ? parseFloat(c[fi.lat])  : NaN;
+        lon     = fi.lon>=0  ? parseFloat(c[fi.lon])  : NaN;
+        adr     = fi.adresse>=0 ? c[fi.adresse] : '';
+        commune = fi.commune>=0 ? c[fi.commune] : '';
+        dept    = fi.dept>=0    ? c[fi.dept]    : '';
+        nb      = fi.locaux>=0  ? parseInt(c[fi.locaux])||0  : 0;
+        jda     = fi.jours>=0   ? parseInt(c[fi.jours])||0   : 0;
+        if(isNaN(lat)||isNaN(lon)||!adr) continue;
+        var op  = fi.operateur>=0 ? c[fi.operateur] : '';
+        if(op==='both') ptype='both';
+        else if(op==='sfr') ptype='sfr';
+        if(type==='anniv'){
+          if(jda<=0||jda>30) continue;
+          ptype='anniv';
+        }
+      }
+
       var id = adr+'_'+lat.toFixed(4)+'_'+lon.toFixed(4);
       if(points.find(function(p){return p.id===id;})) continue;
-      var ptype = type;
-      var op = fi.operateur>=0 ? c[fi.operateur] : '';
-      if(op==='both') ptype='both';
-      else if(op==='sfr') ptype='sfr';
-      var nb = fi.locaux>=0 ? parseInt(c[fi.locaux])||0 : 0;
-      var jda = fi.jours>=0 ? parseInt(c[fi.jours])||0 : 0;
-      if(type==='anniv' && (jda<=0||jda>30)) continue;
-      if(type==='anniv') ptype='anniv';
+
       points.push({
-        id:id, adresse:adr,
-        commune: fi.commune>=0 ? c[fi.commune] : '',
-        dept:    fi.dept>=0    ? c[fi.dept]    : '',
-        locaux:  nb, lat:lat, lon:lon,
+        id:id, adresse:adr, commune:commune, dept:dept, locaux:nb,
+        lat:lat, lon:lon,
         couleur: fi.couleur>=0  ? c[fi.couleur]  : '',
         score:   fi.score>=0    ? parseFloat(c[fi.score])||0 : 0,
         ptype:ptype, jours_anniv:jda,
-        mesc:  fi.mesc>=0 ? c[fi.mesc] : '',
+        mesc: fi.mesc>=0 ? c[fi.mesc] : '',
         note:'', action:''
       });
       added++;
     }
     placerMarkers();
-    document.getElementById('liveCtr').style.display = 'block';
-    toast('✅ '+added+' points ajoutés');
+    document.getElementById('liveCtr') && (document.getElementById('liveCtr').style.display='block');
+    toast('✅ '+added+' points ajoutés ('+file.name+')');
     fermerImport();
   };
   r.readAsText(file, 'utf-8');
@@ -480,6 +656,7 @@ function importerChaleur(event){
     if(fd<0||fv<0){ toast('❌ Colonnes date/ville manquantes'); return; }
     var today2 = new Date();
     chaleurVilles = [];
+    vistesVilles = {};
     for(var i=1;i<lines.length;i++){
       var c = lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
       var ville=c[fv]&&c[fv].trim(), ds=c[fd]&&c[fd].trim();
@@ -490,6 +667,11 @@ function importerChaleur(event){
         var jours=Math.floor((today2-d)/86400000);
         if(jours>400) continue;
         chaleurVilles.push({ville:ville,date:ds,jours:jours});
+        // Remplir vistesVilles pour le scoring
+        var vk=ville.toLowerCase();
+        if(!vistesVilles[vk])vistesVilles[vk]={nb:0,minJ:9999};
+        vistesVilles[vk].nb++;
+        if(jours<vistesVilles[vk].minJ)vistesVilles[vk].minJ=jours;
       }catch(ex){}
     }
     placerChaleur();
@@ -529,14 +711,15 @@ function majChips(){
   var nb=function(t){return points.filter(function(p){return p.ptype===t&&!['done','bad','concurrent','signé'].includes(p.action);}).length;};
   var nv=new Set(chaleurVilles.map(function(v){return v.ville;})).size;
   var chips=[
-    {type:'both',col:'#ffd700',val:nb('both'),lbl:'Both'},
-    {type:'orange',col:'#ff8c00',val:nb('orange'),lbl:'Orange'},
-    {type:'sfr',col:'#b06cff',val:nb('sfr'),lbl:'SFR'},
-    {type:'anniv',col:'#ff6eb4',val:nb('anniv'),lbl:'Anniv.'},
-    {type:'chaleur',col:'#ff5500',val:nv,lbl:'Visites'},
+    {type:'both',   col:'#ffd700',val:nb('both'),   lbl:'Both'},
+    {type:'orange', col:'#ff8c00',val:nb('orange'),  lbl:'Orange'},
+    {type:'sfr',    col:'#b06cff',val:nb('sfr'),     lbl:'SFR'},
+    {type:'anniv',  col:'#ff6eb4',val:nb('anniv'),   lbl:'Anniv.'},
+    {type:'daddi',  col:'#00c8ff',val:nb('daddi'),   lbl:'DADDI'},
+    {type:'chaleur',col:'#ff5500',val:nv,             lbl:'Visites'},
   ];
   document.getElementById('chips').innerHTML=chips.map(function(ch){
-    return '<div class="chip '+(layersOn[ch.type]?'on':'')+'" onclick="toggleLayer(\''+ch.type+'\',this)"><div class="chip-dot" style="background:'+ch.col+'"></div><span class="chip-val" style="color:'+ch.col+'">'+ch.val+'</span><span class="chip-lbl">'+ch.lbl+'</span></div>';
+    return '<div class="chip '+(layersOn[ch.type]?'on':'')+'" onclick="toggleLayer(\''+ch.type+'\',this)"><div class="chip-dot" style="background:'+ch.col+'"></div><span class="chip-val" style="color:'+ch.col+'">'+ch.val+'</span><span class="chip-lbl"> '+ch.lbl+'</span></div>';
   }).join('');
 }
 
@@ -544,8 +727,8 @@ function toggleLayer(type, el){
   if(!map) return;
   layersOn[type]=!layersOn[type];
   el.classList.toggle('on',layersOn[type]);
-  var l={orange:layerOrange,sfr:layerSFR,both:layerBoth,anniv:layerAnniv,chaleur:layerChaleur}[type];
-  if(layersOn[type]) map.addLayer(l); else map.removeLayer(l);
+  var l={orange:layerOrange,sfr:layerSFR,both:layerBoth,anniv:layerAnniv,chaleur:layerChaleur,daddi:layerDADDI}[type];
+  if(l){if(layersOn[type]) map.addLayer(l); else map.removeLayer(l);}
 }
 
 function majPanel(){
@@ -739,6 +922,131 @@ function dl(csv,nom){
 function toggleLegend(){
   var l=document.getElementById('legendWrap');
   l.style.display=l.style.display==='none'?'block':'none';
+}
+
+// ═══════════════════════════════════════════
+// LÉGENDE ÉDITABLE
+// ═══════════════════════════════════════════
+var legendEditing = false;
+function toggleEditLegend(){
+  legendEditing=!legendEditing;
+  var el=document.getElementById('legendEdit');
+  el.style.display=legendEditing?'block':'none';
+  if(legendEditing){
+    var spans=document.querySelectorAll('#legendItems .leg-r span');
+    var html='';
+    spans.forEach(function(span,i){
+      var dot=span.previousElementSibling;
+      var col=dot?dot.style.background:'#fff';
+      html+='<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px"><div style="width:9px;height:9px;border-radius:50%;background:'+col+';flex-shrink:0"></div><input data-idx="'+i+'" value="'+span.textContent+'" style="flex:1;padding:3px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:0.65rem;outline:none;"></div>';
+    });
+    document.getElementById('legendEditItems').innerHTML=html;
+  }
+}
+function sauvegarderLegend(){
+  var inputs=document.querySelectorAll('#legendEditItems input');
+  var spans=document.querySelectorAll('#legendItems .leg-r span');
+  inputs.forEach(function(inp,i){if(spans[i])spans[i].textContent=inp.value;});
+  legendEditing=false;
+  document.getElementById('legendEdit').style.display='none';
+  toast('✅ Légende mise à jour');
+}
+
+// ═══════════════════════════════════════════
+// GÉOCODAGE + IMPORT DADDI / ANNIV
+// ═══════════════════════════════════════════
+function lireFichier(file){
+  return new Promise(function(res){var r=new FileReader();r.onload=function(e){res(e.target.result);};r.readAsText(file,'utf-8');});
+}
+async function geocoderAdresse(adresse,commune,cp){
+  try{
+    var q=encodeURIComponent(adresse+' '+cp+' '+commune);
+    var r=await fetch('https://api-adresse.data.gouv.fr/search/?q='+q+'&limit=1');
+    var d=await r.json();
+    if(d.features&&d.features.length>0){var c=d.features[0].geometry.coordinates;return{lon:c[0],lat:c[1]};}
+  }catch(e){}
+  return null;
+}
+async function importerDADDI(event){
+  var file=event.target.files[0];if(!file)return;
+  fermerImport();toast('⏳ Géocodage DADDI...');
+  var text=await lireFichier(file);
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  var sep=lines[0].includes(';')?';':',';
+  var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+  var fi={
+    numero:h.findIndex(function(v){return v.includes('numerovoi');}),
+    compl:h.findIndex(function(v){return v.includes('complnumero');}),
+    voie:h.findIndex(function(v){return v.includes('nomvoie');}),
+    cp:h.findIndex(function(v){return v.includes('codepostal');}),
+    commune:h.findIndex(function(v){return v==='commune';}),
+    locaux:h.findIndex(function(v){return v.includes('nombrelogement');}),
+    mesc:h.findIndex(function(v){return v.includes('mescdate')||v==='mescdate';}),
+    dept:h.findIndex(function(v){return v==='dept';}),
+  };
+  var added=0,errors=0,limit=Math.min(lines.length,201);
+  for(var i=1;i<limit;i++){
+    var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+    var num=fi.numero>=0?c[fi.numero]:'',compl=fi.compl>=0?c[fi.compl]:'';
+    var voie=fi.voie>=0?c[fi.voie]:'',cp=fi.cp>=0?c[fi.cp]:'',com=fi.commune>=0?c[fi.commune]:'';
+    var nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
+    var mesc=fi.mesc>=0?c[fi.mesc]:'',dept=fi.dept>=0?c[fi.dept]:(cp?cp.substring(0,2):'');
+    if(!voie||!cp)continue;
+    var adrStr=([num,compl].filter(Boolean).join(' ')+' '+voie).trim()+', '+cp+' '+com;
+    var id=adrStr+'_daddi_'+i;
+    if(points.find(function(p){return p.id===id;}))continue;
+    var coords=await geocoderAdresse([num,compl,voie].filter(Boolean).join(' '),com,cp);
+    if(!coords){errors++;continue;}
+    points.push({id:id,adresse:adrStr,commune:com,dept:dept,locaux:nb,lat:coords.lat,lon:coords.lon,couleur:'blue',score:0,ptype:'daddi',jours_anniv:0,mesc:mesc,note:'',action:''});
+    added++;
+    if(added%10===0)toast('⏳ DADDI: '+added+'...');
+    await new Promise(function(r){setTimeout(r,80);});
+  }
+  placerMarkers();majChips();
+  toast('✅ DADDI: '+added+' points ('+errors+' non trouvés)');
+}
+async function importerAnnivDADDI(event){
+  var file=event.target.files[0];if(!file)return;
+  fermerImport();toast('⏳ Géocodage Anniversaires...');
+  var text=await lireFichier(file);
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  var sep=lines[0].includes(';')?';':',';
+  var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+  var fi={
+    jda:h.findIndex(function(v){return v==='jours_depuis_anniv';}),
+    type:h.findIndex(function(v){return v==='type_anniv';}),
+    numero:h.findIndex(function(v){return v.includes('numerovoi');}),
+    compl:h.findIndex(function(v){return v.includes('complnumero');}),
+    voie:h.findIndex(function(v){return v.includes('nomvoie');}),
+    cp:h.findIndex(function(v){return v.includes('codepostal');}),
+    commune:h.findIndex(function(v){return v==='commune';}),
+    locaux:h.findIndex(function(v){return v.includes('nombrelogement');}),
+    mesc:h.findIndex(function(v){return v.includes('mescdate');}),
+    dept:h.findIndex(function(v){return v==='dept';}),
+  };
+  var added=0,errors=0;
+  for(var i=1;i<lines.length;i++){
+    var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+    var jda=fi.jda>=0?parseInt(c[fi.jda])||0:0;
+    if(jda<0||jda>45)continue;
+    var num=fi.numero>=0?c[fi.numero]:'',compl=fi.compl>=0?c[fi.compl]:'';
+    var voie=fi.voie>=0?c[fi.voie]:'',cp=fi.cp>=0?c[fi.cp]:'',com=fi.commune>=0?c[fi.commune]:'';
+    var nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
+    var mesc=fi.mesc>=0?c[fi.mesc]:'',dept=fi.dept>=0?c[fi.dept]:(cp?cp.substring(0,2):'');
+    var type=fi.type>=0?c[fi.type]:'1an';
+    if(!voie||!cp)continue;
+    var adrStr=([num,compl].filter(Boolean).join(' ')+' '+voie).trim()+', '+cp+' '+com;
+    var id=adrStr+'_anniv_'+i;
+    if(points.find(function(p){return p.id===id;}))continue;
+    var coords=await geocoderAdresse([num,compl,voie].filter(Boolean).join(' '),com,cp);
+    if(!coords){errors++;continue;}
+    points.push({id:id,adresse:adrStr,commune:com,dept:dept,locaux:nb,lat:coords.lat,lon:coords.lon,couleur:'',score:0,ptype:'anniv',jours_anniv:jda,mesc:mesc,anniv_type:type,note:'',action:''});
+    added++;
+    if(added%5===0)toast('⏳ Anniv: '+added+'...');
+    await new Promise(function(r){setTimeout(r,100);});
+  }
+  placerMarkers();majChips();
+  toast('✅ Anniversaires: '+added+' ('+errors+' non trouvés)');
 }
 
 // ═══════════════════════════════════════════

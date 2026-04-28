@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ORACLE">
+<meta name="theme-color" content="#000">
+<title>NEXUS·ORACLE — Intelligence Prospection</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,600;0,700;0,900;1,400&family=Courier+Prime:wght@400;700&display=swap');
+
+:root{
+  --void:#000;--ink:#050508;--panel:#0a0a0f;--glass:#0f0f18;
+  --wire:#1a1a2e;--wire2:#252540;
+  --lime:#b5ff2d;--lime2:#8acc1a;--lime3:#2a3a08;
+  --amber:#ffb800;--amber2:#cc8800;
+  --red:#ff2233;--cyan:#00e5ff;--white:#f0f0f0;
+  --ghost:#2a2a3a;--muted:#3a3a5a;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--void);}
+body{font-family:'Barlow Condensed',sans-serif;color:var(--white);display:flex;flex-direction:column;}
+
+/* ── GRAIN OVERLAY ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:0.4;mix-blend-mode:overlay;
+}
+
+/* ── TICKER ── */
+.ticker{
+  flex-shrink:0;height:28px;background:var(--lime3);border-bottom:1px solid var(--lime);
+  display:flex;align-items:center;overflow:hidden;position:relative;z-index:100;
+}
+.ticker-label{padding:0 12px;font-size:0.6rem;font-weight:700;color:var(--lime);letter-spacing:0.15em;background:var(--lime);color:var(--void);height:100%;display:flex;align-items:center;white-space:nowrap;flex-shrink:0;}
+.ticker-inner{display:flex;gap:0;animation:ticker 40s linear infinite;white-space:nowrap;}
+.ticker-item{display:flex;align-items:center;gap:8px;padding:0 20px;border-right:1px solid var(--wire2);font-size:0.65rem;font-weight:600;letter-spacing:0.04em;}
+.ticker-item .t-name{color:var(--muted);}
+.ticker-item .t-val{color:var(--lime);}
+.ticker-item .t-up{color:var(--lime);}
+.ticker-item .t-down{color:var(--red);}
+@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+
+/* ── HEADER ── */
+.hdr{
+  flex-shrink:0;display:flex;align-items:stretch;height:46px;
+  background:var(--ink);border-bottom:2px solid var(--lime);
+  position:relative;z-index:100;
+}
+.hdr-brand{
+  display:flex;align-items:center;gap:10px;padding:0 16px;
+  border-right:1px solid var(--wire2);flex-shrink:0;
+}
+.brand-name{font-size:1.4rem;font-weight:900;letter-spacing:0.08em;color:var(--lime);line-height:1;text-shadow:0 0 20px rgba(181,255,45,0.4);}
+.brand-sub{font-family:'Courier Prime',monospace;font-size:0.45rem;color:var(--muted);letter-spacing:0.2em;display:block;margin-top:1px;}
+.hdr-kpis{display:flex;flex:1;overflow-x:auto;}
+.hkpi{display:flex;flex-direction:column;justify-content:center;padding:0 14px;border-right:1px solid var(--wire);flex-shrink:0;cursor:pointer;}
+.hkpi:hover{background:rgba(181,255,45,0.04);}
+.hkpi-val{font-family:'Courier Prime',monospace;font-size:1rem;font-weight:700;line-height:1;}
+.hkpi-lbl{font-size:0.45rem;color:var(--muted);letter-spacing:0.15em;margin-top:1px;}
+.hkpi-delta{font-size:0.5rem;margin-top:1px;}
+.hdr-btns{display:flex;align-items:center;gap:0;flex-shrink:0;}
+.hbtn{height:100%;padding:0 12px;background:transparent;border:none;border-left:1px solid var(--wire);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:0.6rem;font-weight:600;cursor:pointer;letter-spacing:0.1em;transition:all 0.15s;white-space:nowrap;}
+.hbtn:hover,.hbtn:active{color:var(--lime);background:rgba(181,255,45,0.05);}
+.hbtn.prime{color:var(--lime);border-left-color:var(--lime);}
+input[type=file]{display:none;}
+
+/* ── MAIN LAYOUT ── */
+.main{flex:1;display:flex;overflow:hidden;}
+
+/* ── LEFT PANEL ── */
+.left{
+  width:260px;flex-shrink:0;display:flex;flex-direction:column;
+  border-right:1px solid var(--wire2);background:var(--ink);overflow:hidden;
+}
+.left-section{border-bottom:1px solid var(--wire);flex-shrink:0;}
+.ls-title{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;background:var(--panel);
+  font-size:0.52rem;font-weight:700;letter-spacing:0.15em;color:var(--muted);
+  border-bottom:1px solid var(--wire);
+}
+.ls-title span{color:var(--lime);}
+.ls-title button{background:none;border:none;color:var(--muted);font-size:0.65rem;cursor:pointer;}
+.ls-title button:hover{color:var(--lime);}
+
+/* IMPORT ZONES */
+.import-list{padding:6px;}
+.iz{display:flex;align-items:center;gap:8px;padding:7px 8px;border:1px solid var(--wire);cursor:pointer;margin-bottom:4px;transition:all 0.15s;background:var(--panel);}
+.iz:hover,.iz:active{border-color:var(--lime);background:rgba(181,255,45,0.04);}
+.iz-icon{font-size:1rem;flex-shrink:0;}
+.iz-info{flex:1;min-width:0;}
+.iz-title{font-size:0.62rem;font-weight:700;letter-spacing:0.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.iz-sub{font-size:0.48rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.iz-badge{font-family:'Courier Prime',monospace;font-size:0.7rem;font-weight:700;color:var(--lime);flex-shrink:0;}
+
+/* HLM SCORE */
+.hlm-list{overflow-y:auto;max-height:180px;padding:4px;}
+.hlm-item{
+  padding:6px 8px;border:1px solid var(--wire);margin-bottom:3px;
+  cursor:pointer;transition:all 0.15s;background:var(--panel);
+  display:flex;align-items:center;gap:8px;
+}
+.hlm-item:hover{border-color:var(--amber);background:rgba(255,184,0,0.04);}
+.hlm-item.top{border-left:3px solid var(--lime);}
+.hlm-rank{font-family:'Courier Prime',monospace;font-size:0.65rem;color:var(--muted);min-width:16px;}
+.hlm-info{flex:1;min-width:0;}
+.hlm-addr{font-size:0.62rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hlm-meta{font-size:0.5rem;color:var(--muted);margin-top:1px;font-family:'Courier Prime',monospace;}
+.hlm-score{font-family:'Courier Prime',monospace;font-size:0.8rem;font-weight:700;flex-shrink:0;}
+
+/* ANNIVERSAIRES URGENTS */
+.anniv-list{overflow-y:auto;max-height:160px;padding:4px;}
+.anniv-item{
+  padding:6px 8px;margin-bottom:3px;display:flex;align-items:center;gap:8px;
+  border-left:3px solid;background:var(--panel);border-top:1px solid var(--wire);cursor:pointer;
+}
+.anniv-item:hover{background:var(--glass);}
+.anniv-jda{font-family:'Courier Prime',monospace;font-size:1rem;font-weight:700;min-width:35px;text-align:center;line-height:1;}
+.anniv-info{flex:1;min-width:0;}
+.anniv-addr{font-size:0.62rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.anniv-meta{font-size:0.5rem;color:var(--muted);font-family:'Courier Prime',monospace;margin-top:1px;}
+.anniv-type{font-size:0.45rem;font-weight:700;letter-spacing:0.1em;padding:1px 4px;border-radius:2px;flex-shrink:0;}
+
+/* OUVERTURES RÉCENTES */
+.ouv-list{overflow-y:auto;max-height:120px;padding:4px;}
+.ouv-item{padding:5px 8px;border-bottom:1px solid var(--wire);display:flex;align-items:center;gap:8px;font-size:0.58rem;}
+.ouv-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;animation:blink2 2s infinite;}
+@keyframes blink2{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.ouv-commune{flex:1;font-weight:600;}
+.ouv-date{font-family:'Courier Prime',monospace;color:var(--muted);font-size:0.48rem;}
+
+/* ── CENTER — AI ORACLE ── */
+.center{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--ink);}
+
+/* AI CONSEIL HEADER */
+.oracle-hdr{
+  flex-shrink:0;padding:10px 16px;border-bottom:1px solid var(--wire2);
+  background:var(--panel);display:flex;align-items:center;gap:12px;
+}
+.oracle-logo{font-size:1rem;font-weight:900;letter-spacing:0.08em;color:var(--lime);}
+.oracle-status{font-family:'Courier Prime',monospace;font-size:0.52rem;color:var(--muted);flex:1;}
+.oracle-mode{display:flex;gap:0;}
+.mode-btn{padding:4px 10px;border:1px solid var(--wire);background:transparent;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:0.55rem;font-weight:600;cursor:pointer;letter-spacing:0.08em;transition:all 0.15s;}
+.mode-btn.on{background:var(--lime);color:var(--void);border-color:var(--lime);}
+
+/* CONSEIL CARDS */
+.conseil-grid{flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start;}
+.conseil-card{
+  background:var(--panel);border:1px solid var(--wire2);
+  padding:12px;position:relative;overflow:hidden;cursor:pointer;
+  transition:all 0.2s;
+}
+.conseil-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;}
+.conseil-card:hover{border-color:var(--lime);transform:translateY(-1px);}
+.cc-tag{font-size:0.45rem;font-weight:700;letter-spacing:0.15em;color:var(--muted);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.cc-tag-dot{width:5px;height:5px;border-radius:50%;}
+.cc-title{font-size:0.85rem;font-weight:700;letter-spacing:0.04em;margin-bottom:4px;line-height:1.2;}
+.cc-desc{font-size:0.6rem;color:var(--muted);line-height:1.5;margin-bottom:8px;}
+.cc-score{
+  display:flex;align-items:center;gap:6px;
+  font-family:'Courier Prime',monospace;font-size:0.65rem;
+}
+.cc-bar{flex:1;height:3px;background:var(--wire);}
+.cc-fill{height:100%;transition:width 1.5s ease;}
+.cc-val{font-weight:700;min-width:30px;text-align:right;}
+.cc-action{
+  width:100%;padding:7px;margin-top:8px;
+  background:transparent;border:1px solid var(--wire2);
+  color:var(--muted);font-family:'Barlow Condensed',sans-serif;
+  font-size:0.6rem;font-weight:600;cursor:pointer;letter-spacing:0.08em;
+  transition:all 0.15s;
+}
+.cc-action:hover{border-color:var(--lime);color:var(--lime);}
+
+/* CONSEIL FULL */
+.conseil-full{
+  background:var(--panel);border:1px solid var(--wire2);
+  padding:14px;grid-column:span 2;
+}
+
+/* AI CHAT RAPIDE */
+.quick-bar{
+  flex-shrink:0;border-top:1px solid var(--wire2);padding:8px 12px;
+  background:var(--panel);display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+}
+.qbtn{padding:4px 10px;border:1px solid var(--wire2);background:transparent;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:0.58rem;font-weight:600;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;white-space:nowrap;}
+.qbtn:hover,.qbtn:active{border-color:var(--amber);color:var(--amber);}
+.qbtn.special{border-color:var(--lime3);color:var(--lime);}
+
+/* AI RESPONSE AREA */
+.ai-area{
+  flex-shrink:0;border-top:2px solid var(--lime);background:var(--ink);
+  max-height:220px;overflow-y:auto;
+}
+.ai-area-hdr{
+  padding:6px 12px;background:var(--lime3);display:flex;align-items:center;gap:8px;
+  font-size:0.52rem;font-weight:700;letter-spacing:0.12em;color:var(--lime);
+  border-bottom:1px solid var(--lime3);flex-shrink:0;sticky;top:0;
+}
+.ai-msgs{padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.ai-msg{font-size:0.72rem;line-height:1.6;padding:8px 10px;border-left:2px solid;}
+.ai-msg.user{border-color:var(--amber);color:var(--white);background:rgba(255,184,0,0.04);}
+.ai-msg.ai{border-color:var(--lime);color:var(--lime);font-family:'Courier Prime',monospace;font-size:0.65rem;background:rgba(181,255,45,0.03);}
+.ai-msg.sys{border-color:var(--wire2);color:var(--muted);font-size:0.6rem;font-style:italic;}
+.ai-typing{display:flex;gap:3px;padding:8px 10px;border-left:2px solid var(--lime);}
+.ai-typing span{width:5px;height:5px;border-radius:50%;background:var(--lime);animation:dot2 1.2s infinite;}
+.ai-typing span:nth-child(2){animation-delay:0.2s;}
+.ai-typing span:nth-child(3){animation-delay:0.4s;}
+@keyframes dot2{0%,60%,100%{opacity:0.3;}30%{opacity:1;}}
+.ai-input-wrap{border-top:1px solid var(--wire);display:flex;flex-shrink:0;}
+.ai-input{flex:1;padding:8px 12px;background:var(--ink);border:none;color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:400;outline:none;letter-spacing:0.02em;}
+.ai-input::placeholder{color:var(--muted);}
+.ai-send{padding:8px 14px;background:var(--lime3);border:none;border-left:1px solid var(--lime);color:var(--lime);font-family:'Barlow Condensed',sans-serif;font-size:0.65rem;font-weight:700;cursor:pointer;letter-spacing:0.1em;}
+.ai-send:active{background:rgba(181,255,45,0.15);}
+
+/* ── RIGHT PANEL ── */
+.right{
+  width:200px;flex-shrink:0;display:flex;flex-direction:column;
+  border-left:1px solid var(--wire2);background:var(--ink);overflow:hidden;
+}
+.right-section{border-bottom:1px solid var(--wire);}
+
+/* MÉTÉO */
+.meteo-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.meteo-cell{
+  padding:7px 8px;border-right:1px solid var(--wire);border-bottom:1px solid var(--wire);
+  display:flex;flex-direction:column;gap:2px;cursor:pointer;
+}
+.meteo-cell:hover{background:var(--glass);}
+.mc-ville{font-size:0.48rem;color:var(--muted);letter-spacing:0.08em;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;}
+.mc-score{font-family:'Courier Prime',monospace;font-size:0.9rem;font-weight:700;line-height:1;}
+.mc-sub{font-size:0.44rem;color:var(--muted);font-family:'Courier Prime',monospace;}
+.mc-bar{height:2px;background:var(--wire);margin-top:2px;}
+.mc-fill{height:100%;transition:width 1s ease;}
+
+/* STATS TEMPS RÉEL */
+.stat-list{padding:4px;}
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-bottom:1px solid var(--wire);font-size:0.58rem;}
+.stat-lbl{color:var(--muted);letter-spacing:0.06em;}
+.stat-val{font-family:'Courier Prime',monospace;font-weight:700;}
+
+/* CUIVRE ALERT */
+.cuivre-list{overflow-y:auto;max-height:120px;padding:4px;}
+.cuivre-item{padding:5px 8px;border-left:3px solid var(--red);margin-bottom:3px;background:rgba(255,34,51,0.04);font-size:0.55rem;}
+.cuivre-commune{font-weight:700;color:var(--red);}
+.cuivre-date{font-family:'Courier Prime',monospace;color:var(--muted);font-size:0.48rem;margin-top:1px;}
+
+/* BOTTOM BAR */
+.bar{
+  flex-shrink:0;height:28px;background:var(--void);border-top:1px solid var(--wire2);
+  display:flex;align-items:center;z-index:100;
+}
+.bar-info{flex:1;padding:0 12px;font-family:'Courier Prime',monospace;font-size:0.5rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-btns{display:flex;height:100%;}
+.bar-btn{height:100%;padding:0 10px;border-left:1px solid var(--wire);background:transparent;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:0.52rem;font-weight:600;cursor:pointer;letter-spacing:0.08em;white-space:nowrap;border-top:none;border-bottom:none;border-right:none;}
+.bar-btn:hover{color:var(--lime);background:rgba(181,255,45,0.04);}
+.bar-btn.g{color:var(--lime2);}
+
+/* TOAST */
+.toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--lime3);border:1px solid var(--lime);color:var(--lime);padding:6px 14px;font-family:'Courier Prime',monospace;font-size:0.65rem;z-index:9999;opacity:0;transition:all 0.2s;white-space:nowrap;pointer-events:none;letter-spacing:0.05em;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.err{background:rgba(255,34,51,0.15);border-color:var(--red);color:var(--red);}
+
+/* RESPONSIVE MOBILE */
+@media(max-width:700px){
+  .left{width:0;overflow:hidden;display:none;}
+  .right{width:0;overflow:hidden;display:none;}
+  .conseil-grid{grid-template-columns:1fr;}
+  .conseil-full{grid-column:span 1;}
+}
+@media(max-width:900px){
+  .right{width:160px;}
+  .left{width:200px;}
+}
+
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--wire2);}
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-label">◈ NEXUS LIVE</div>
+  <div class="ticker-inner" id="tickerInner">
+    <div class="ticker-item"><span class="t-name">HLM ISOLÉS</span><span class="t-val" id="tk-hlm">—</span><span class="t-up">▲ PRIORITÉ</span></div>
+    <div class="ticker-item"><span class="t-name">ANNIVERSAIRES J+7</span><span class="t-val" id="tk-anniv">—</span><span class="t-up">⚡ URGENTS</span></div>
+    <div class="ticker-item"><span class="t-name">OUVERTURES MOIS</span><span class="t-val" id="tk-ouv">—</span><span class="t-up">▲ NOUVELLES</span></div>
+    <div class="ticker-item"><span class="t-name">SCORE MOYEN</span><span class="t-val" id="tk-score">—</span></div>
+    <div class="ticker-item"><span class="t-name">CUIVRE CRITIQUE</span><span class="t-val" id="tk-cuivre">—</span><span class="t-down">▼ ALERTES</span></div>
+    <div class="ticker-item"><span class="t-name">TAUX CONV.</span><span class="t-val" id="tk-conv">0%</span></div>
+    <!-- Dupliqué pour loop -->
+    <div class="ticker-item"><span class="t-name">HLM ISOLÉS</span><span class="t-val">—</span><span class="t-up">▲ PRIORITÉ</span></div>
+    <div class="ticker-item"><span class="t-name">ANNIVERSAIRES J+7</span><span class="t-val">—</span><span class="t-up">⚡ URGENTS</span></div>
+    <div class="ticker-item"><span class="t-name">OUVERTURES MOIS</span><span class="t-val">—</span><span class="t-up">▲ NOUVELLES</span></div>
+    <div class="ticker-item"><span class="t-name">SCORE MOYEN</span><span class="t-val">—</span></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div>
+      <div class="brand-name">ORACLE</div>
+      <span class="brand-sub">NEXUS·AI INTELLIGENCE</span>
+    </div>
+  </div>
+  <div class="hdr-kpis">
+    <div class="hkpi" onclick="toast('Contrats aujourd\'hui')">
+      <div class="hkpi-val" id="kContrats" style="color:var(--lime)">0</div>
+      <div class="hkpi-lbl">CONTRATS</div>
+      <div class="hkpi-delta" id="kTaux" style="color:var(--lime2)">0%</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-val" id="kHLM" style="color:var(--amber)">—</div>
+      <div class="hkpi-lbl">HLM ISOLÉS</div>
+      <div class="hkpi-delta" style="color:var(--amber2)">+40KM</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-val" id="kAnniv" style="color:var(--red)">—</div>
+      <div class="hkpi-lbl">ANNIV J+7</div>
+      <div class="hkpi-delta" style="color:var(--red)">URGENT</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-val" id="kOuv" style="color:var(--cyan)">—</div>
+      <div class="hkpi-lbl">NOUVELLES OUV.</div>
+      <div class="hkpi-delta" style="color:var(--cyan)">CE MOIS</div>
+    </div>
+    <div class="hkpi">
+      <div class="hkpi-val" id="kScore" style="color:var(--white)">—</div>
+      <div class="hkpi-lbl">SCORE MOY.</div>
+      <div class="hkpi-delta" style="color:var(--muted)">/100</div>
+    </div>
+  </div>
+  <div class="hdr-btns">
+    <button class="hbtn" onclick="document.getElementById('fileOrange').click()">📂 ORANGE</button>
+    <input type="file" id="fileOrange" accept=".csv" onchange="importerCSV(event,'orange')">
+    <button class="hbtn" onclick="document.getElementById('fileAnniv').click()">🎂 ANNIV</button>
+    <input type="file" id="fileAnniv" accept=".csv" onchange="importerCSV(event,'anniv')">
+    <button class="hbtn" onclick="document.getElementById('fileDaddi').click()">🔵 DADDI</button>
+    <input type="file" id="fileDaddi" accept=".csv" onchange="importerDADDI(event)">
+    <button class="hbtn prime" onclick="genererConseils()">⚡ ANALYSE IA</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT: HLM + ANNIVERSAIRES + OUVERTURES -->
+  <div class="left">
+
+    <!-- HLM ISOLÉS -->
+    <div class="left-section">
+      <div class="ls-title">◈ HLM ÉLOIGNÉS <span id="hlmCount">0</span> <button onclick="analyserHLM()">IA →</button></div>
+      <div class="hlm-list" id="hlmList">
+        <div style="padding:10px;font-size:0.58rem;color:var(--muted);text-align:center">Importez fusion_orange_sfr.csv</div>
+      </div>
+    </div>
+
+    <!-- ANNIVERSAIRES -->
+    <div class="left-section">
+      <div class="ls-title">◈ ANNIVERSAIRES <span id="annivCount">0</span> <button onclick="analyserAnniv()">IA →</button></div>
+      <div class="anniv-list" id="annivList">
+        <div style="padding:10px;font-size:0.58rem;color:var(--muted);text-align:center">Importez anniversaires_fibre.csv</div>
+      </div>
+    </div>
+
+    <!-- NOUVELLES OUVERTURES -->
+    <div class="left-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="ls-title">◈ OUVERTURES RÉCENTES <span id="ouvCount">0</span></div>
+      <div class="ouv-list" id="ouvList" style="flex:1;max-height:none;">
+        <div style="padding:10px;font-size:0.58rem;color:var(--muted);text-align:center">Données ARCEP</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER: ORACLE AI -->
+  <div class="center">
+    <div class="oracle-hdr">
+      <div class="oracle-logo">◈ ORACLE INTELLIGENCE</div>
+      <div class="oracle-status" id="oracleStatus">EN ATTENTE DE DONNÉES — IMPORTEZ UN CSV POUR ACTIVER L'ANALYSE</div>
+      <div class="oracle-mode">
+        <button class="mode-btn on" onclick="setMode('hlm',this)">HLM</button>
+        <button class="mode-btn" onclick="setMode('anniv',this)">ANNIV</button>
+        <button class="mode-btn" onclick="setMode('ouv',this)">OUVERT.</button>
+        <button class="mode-btn" onclick="setMode('global',this)">GLOBAL</button>
+      </div>
+    </div>
+
+    <div class="conseil-grid" id="conseilGrid">
+      <!-- Cards générées par JS -->
+      <div class="conseil-full" style="text-align:center;padding:30px 20px;">
+        <div style="font-size:2.5rem;margin-bottom:12px;opacity:0.3">◈</div>
+        <div style="font-size:0.85rem;font-weight:700;color:var(--muted);letter-spacing:0.1em;margin-bottom:8px">ORACLE PRÊT</div>
+        <div style="font-size:0.65rem;color:var(--muted);line-height:1.8;max-width:300px;margin:0 auto">
+          1. Importez <strong style="color:var(--white)">fusion_orange_sfr.csv</strong><br>
+          2. Importez <strong style="color:var(--white)">anniversaires_fibre.csv</strong><br>
+          3. Cliquez <strong style="color:var(--lime)">⚡ ANALYSE IA</strong><br><br>
+          <span style="color:var(--lime)">L'IA analysera vos HLM éloignés, anniversaires urgents et nouvelles ouvertures pour générer des conseils personnalisés.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK BAR -->
+    <div class="quick-bar">
+      <span style="font-size:0.5rem;color:var(--muted);letter-spacing:0.1em;flex-shrink:0">IA RAPIDE:</span>
+      <button class="qbtn special" onclick="quickQuestion('Quels sont les 5 meilleurs HLM isolés à prospecter maintenant ?')">HLM TOP 5</button>
+      <button class="qbtn special" onclick="quickQuestion('Anniversaires urgents cette semaine — stratégie ?')">ANNIV STRATEGY</button>
+      <button class="qbtn" onclick="quickQuestion('Arguments Bouygues vs SFR pour un locataire HLM ?')">ARG HLM</button>
+      <button class="qbtn" onclick="quickQuestion('Script de vente pour un client à J+3 anniversaire ?')">SCRIPT J+3</button>
+      <button class="qbtn" onclick="quickQuestion('Comment prospecter un village isolé sans perdre de temps ?')">VILLAGE ISOLÉ</button>
+      <button class="qbtn" onclick="quickQuestion('Priorité : anniversaires ou nouvelles ouvertures ?')">PRIORITÉ ?</button>
+    </div>
+
+    <!-- AI AREA -->
+    <div class="ai-area">
+      <div class="ai-area-hdr">◈ ORACLE·AI — CLAUDE SONNET</div>
+      <div class="ai-msgs" id="aiMsgs">
+        <div class="ai-msg sys">ORACLE initialisé · Bouygues Telecom AuRA · Spécialiste HLM isolés + Anniversaires · Prêt</div>
+      </div>
+      <div class="ai-input-wrap">
+        <input class="ai-input" id="aiInput" placeholder="Question à ORACLE..." onkeydown="if(event.key==='Enter')envoyerAI()">
+        <button class="ai-send" onclick="envoyerAI()">ENVOYER ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: MÉTÉO + STATS + CUIVRE -->
+  <div class="right">
+
+    <!-- MÉTÉO -->
+    <div class="right-section">
+      <div class="ls-title">◈ MÉTÉO SECTEURS</div>
+      <div class="meteo-grid" id="meteoGrid">
+        <!-- Rempli par JS -->
+        <div class="meteo-cell" style="grid-column:span 2;padding:8px;font-size:0.55rem;color:var(--muted);text-align:center">Chargement...</div>
+      </div>
+    </div>
+
+    <!-- STATS TEMPS RÉEL -->
+    <div class="right-section">
+      <div class="ls-title">◈ STATS SESSION</div>
+      <div class="stat-list">
+        <div class="stat-row"><span class="stat-lbl">CONTRATS</span><span class="stat-val" id="sContrats" style="color:var(--lime)">0</span></div>
+        <div class="stat-row"><span class="stat-lbl">PORTES</span><span class="stat-val" id="sPortes">0</span></div>
+        <div class="stat-row"><span class="stat-lbl">CONV.</span><span class="stat-val" id="sTaux" style="color:var(--lime2)">0%</span></div>
+        <div class="stat-row"><span class="stat-lbl">HLM ACTIFS</span><span class="stat-val" id="sHLM" style="color:var(--amber)">0</span></div>
+        <div class="stat-row"><span class="stat-lbl">ANNIV &lt;J+7</span><span class="stat-val" id="sAnniv" style="color:var(--red)">0</span></div>
+        <div class="stat-row"><span class="stat-lbl">TOTAL CSV</span><span class="stat-val" id="sTotal">0</span></div>
+      </div>
+    </div>
+
+    <!-- ALERTE CUIVRE -->
+    <div class="right-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+      <div class="ls-title">◈ ALERTE CUIVRE <span style="color:var(--red)" id="cuivreCount">0</span></div>
+      <div class="cuivre-list" id="cuivreList" style="flex:1;max-height:none;">
+        <div style="padding:8px;font-size:0.52rem;color:var(--muted);text-align:center">Fermetures imminentes</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bar">
+  <div class="bar-info" id="barInfo">ORACLE PRÊT · NEXUS INTELLIGENCE · BOUYGUES TELECOM AURA · <span id="barTime"></span></div>
+  <div class="bar-btns">
+    <button class="bar-btn" onclick="exporterRapport()">EXPORT RAPPORT</button>
+    <button class="bar-btn g" onclick="genererConseils()">⚡ ANALYSE IA</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+var points=[], annivData=[], ouverturesData=[];
+var contrats=0, portes=0;
+var modeActuel='hlm';
+var meteoCache={};
+
+// Horloge
+setInterval(function(){
+  var t=new Date();
+  var el=document.getElementById('barTime');
+  if(el)el.textContent=t.toLocaleTimeString('fr')+' · '+t.toLocaleDateString('fr');
+},1000);
+
+// ═══════════════════════════════════════════════
+// IMPORT CSV
+// ═══════════════════════════════════════════════
+function importerCSV(event, type){
+  var file=event.target.files[0];if(!file)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var lines=e.target.result.split('\n').filter(function(l){return l.trim();});
+    if(lines.length<2){toast('FICHIER INVALIDE',true);return;}
+    var sep=lines[0].includes(';')?';':',';
+    var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+    var fi={
+      adresse:h.findIndex(function(v){return v==='adresse';}),
+      commune:h.findIndex(function(v){return v.includes('commune');}),
+      dept:h.findIndex(function(v){return v==='dept'||v==='dpt';}),
+      locaux:h.findIndex(function(v){return v==='locaux'||v.includes('logloc')||v==='nb'||v.includes('nombrelogement');}),
+      lat:h.findIndex(function(v){return v==='lat'||v==='ban_lat';}),
+      lon:h.findIndex(function(v){return v==='lon'||v==='ban_lon';}),
+      score:h.findIndex(function(v){return v==='score';}),
+      couleur:h.findIndex(function(v){return v==='couleur';}),
+      jda:h.findIndex(function(v){return v==='jours_depuis_anniv';}),
+      mesc:h.findIndex(function(v){return v.includes('mescdate')||v.includes('mesc');}),
+      type_anniv:h.findIndex(function(v){return v==='type_anniv';}),
+      numero:h.findIndex(function(v){return v.includes('numerovoi');}),
+      voie:h.findIndex(function(v){return v.includes('nomvoie');}),
+      cp:h.findIndex(function(v){return v.includes('codepostal');}),
+    };
+
+    var added=0;
+    if(type==='anniv') annivData=[];
+
+    for(var i=1;i<lines.length;i++){
+      var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+      var adr=fi.adresse>=0?c[fi.adresse]:'';
+      var commune=fi.commune>=0?c[fi.commune]:'';
+      var dept=fi.dept>=0?c[fi.dept]:'';
+      var nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
+      var lat=fi.lat>=0?parseFloat(c[fi.lat]):NaN;
+      var lon=fi.lon>=0?parseFloat(c[fi.lon]):NaN;
+      var score=fi.score>=0?parseFloat(c[fi.score])||0:0;
+      var couleur=fi.couleur>=0?c[fi.couleur]:'';
+      var jda=fi.jda>=0?parseInt(c[fi.jda])||999:999;
+      var mesc=fi.mesc>=0?c[fi.mesc]:'';
+      var type_anniv=fi.type_anniv>=0?c[fi.type_anniv]:'';
+
+      if(type==='anniv'){
+        // Anniversaires DADDI format
+        if(!adr&&fi.numero>=0&&fi.voie>=0){
+          var num=c[fi.numero]||'', voie=c[fi.voie]||'', cp=c[fi.cp]||'';
+          adr=([num,voie].filter(Boolean).join(' '))+', '+cp+' '+commune;
+        }
+        if(!adr||jda>45) continue;
+        annivData.push({adresse:adr,commune:commune,dept:dept,locaux:nb,jda:jda,mesc:mesc,type_anniv:type_anniv});
+        added++;
+      } else {
+        // Orange/fusion
+        if(isNaN(lat)||isNaN(lon)||!adr) continue;
+        var id=adr+'_'+lat.toFixed(3)+'_'+lon.toFixed(3);
+        if(points.find(function(p){return p.id===id;})) continue;
+        points.push({id:id,adresse:adr,commune:commune,dept:dept,locaux:nb,lat:lat,lon:lon,score:score,couleur:couleur});
+        added++;
+      }
+    }
+
+    majStats();
+    afficherHLM();
+    afficherAnniv();
+    majTicker();
+    toast(added+' LIGNES CHARGÉES — '+file.name);
+  };
+  r.readAsText(file,'utf-8');
+}
+
+async function importerDADDI(event){
+  var file=event.target.files[0];if(!file)return;
+  toast('GÉOCODAGE EN COURS...');
+  var text=await new Promise(function(res){var r=new FileReader();r.onload=function(e){res(e.target.result);};r.readAsText(file,'utf-8');});
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  var sep=lines[0].includes(';')?';':',';
+  var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+  var fi={
+    jda:h.findIndex(function(v){return v==='jours_depuis_anniv';}),
+    type:h.findIndex(function(v){return v==='type_anniv';}),
+    numero:h.findIndex(function(v){return v.includes('numerovoi');}),
+    compl:h.findIndex(function(v){return v.includes('complnumero');}),
+    voie:h.findIndex(function(v){return v.includes('nomvoie');}),
+    cp:h.findIndex(function(v){return v.includes('codepostal');}),
+    commune:h.findIndex(function(v){return v==='commune';}),
+    locaux:h.findIndex(function(v){return v.includes('nombrelogement');}),
+    mesc:h.findIndex(function(v){return v.includes('mescdate');}),
+    dept:h.findIndex(function(v){return v==='dept';}),
+  };
+  var added=0,errors=0;
+  annivData=[];
+  for(var i=1;i<lines.length;i++){
+    var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+    var jda=fi.jda>=0?parseInt(c[fi.jda])||999:999;
+    if(jda<0||jda>45)continue;
+    var num=fi.numero>=0?c[fi.numero]:'',compl=fi.compl>=0?c[fi.compl]:'';
+    var voie=fi.voie>=0?c[fi.voie]:'',cp=fi.cp>=0?c[fi.cp]:'',com=fi.commune>=0?c[fi.commune]:'';
+    var nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
+    var mesc=fi.mesc>=0?c[fi.mesc]:'',dept=fi.dept>=0?c[fi.dept]:(cp?cp.substring(0,2):'');
+    var type=fi.type>=0?c[fi.type]:'1an';
+    if(!voie||!cp)continue;
+    var adrStr=([num,compl].filter(Boolean).join(' ')+' '+voie).trim()+', '+cp+' '+com;
+    annivData.push({adresse:adrStr,commune:com,dept:dept,locaux:nb,jda:jda,mesc:mesc,type_anniv:type});
+    added++;
+    if(added%10===0)toast('ANNIVERSAIRES: '+added+'...');
+  }
+  majStats();afficherAnniv();majTicker();
+  toast('DADDI: '+added+' ANNIVERSAIRES CHARGÉS');
+}
+
+// ═══════════════════════════════════════════════
+// HLM ISOLÉS
+// ═══════════════════════════════════════════════
+var GRANDES_VILLES = {
+  'grenoble':[45.188,5.724],'lyon':[45.764,4.835],'avignon':[43.949,4.806],
+  'valence':[44.933,4.892],'saint-etienne':[45.440,4.387],'annecy':[45.899,6.129],
+  'chambery':[45.564,5.919],'roanne':[46.034,4.069],'macon':[46.306,4.828],
+  'bourg-en-bresse':[46.205,5.225],'nimes':[43.836,4.360],'montpellier':[43.611,3.877],
+};
+
+function hav(a,b,c,d){var R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180,e=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2;return R*2*Math.atan2(Math.sqrt(e),Math.sqrt(1-e));}
+
+function distGrandeVille(lat,lon){
+  var min=999;
+  Object.values(GRANDES_VILLES).forEach(function(c){
+    var d=hav(lat,lon,c[0],c[1]);
+    if(d<min)min=d;
+  });
+  return min;
+}
+
+function getHLMIsolos(){
+  return points.filter(function(p){
+    if(!p.lat||!p.lon) return false;
+    if(p.locaux<9) return false;
+    return distGrandeVille(p.lat,p.lon) >= 20;
+  }).map(function(p){
+    return Object.assign({},p,{distGV: distGrandeVille(p.lat,p.lon)});
+  }).sort(function(a,b){return b.score-a.score;});
+}
+
+function afficherHLM(){
+  var hlm=getHLMIsolos();
+  document.getElementById('hlmCount').textContent=hlm.length;
+  document.getElementById('kHLM').textContent=hlm.length;
+  document.getElementById('sHLM').textContent=hlm.length;
+
+  var list=document.getElementById('hlmList');
+  if(!hlm.length){list.innerHTML='<div style="padding:10px;font-size:0.55rem;color:var(--muted);text-align:center">Importez fusion_orange_sfr.csv<br>pour voir les HLM éloignés</div>';return;}
+
+  list.innerHTML=hlm.slice(0,20).map(function(p,i){
+    var col=p.score>=70?'var(--lime)':p.score>=50?'var(--amber)':'var(--muted)';
+    var distLabel=p.distGV.toFixed(0)+'km ville';
+    return '<div class="hlm-item '+(i<3?'top':'')+'" onclick="analyserAdresseIA(this)" data-adr="'+p.adresse+'" data-commune="'+p.commune+'" data-locaux="'+p.locaux+'" data-score="'+p.score.toFixed(0)+'" data-dist="'+p.distGV.toFixed(0)+'">'
+      +'<div class="hlm-rank">'+(i+1)+'</div>'
+      +'<div class="hlm-info"><div class="hlm-addr">'+p.adresse.substring(0,30)+'</div><div class="hlm-meta">'+p.commune+' ('+p.dept+') · '+p.locaux+' log · '+distLabel+'</div></div>'
+      +'<div class="hlm-score" style="color:'+col+'">'+p.score.toFixed(0)+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// ANNIVERSAIRES
+// ═══════════════════════════════════════════════
+function afficherAnniv(){
+  var sorted=annivData.slice().sort(function(a,b){return a.jda-b.jda;});
+  var urgents=sorted.filter(function(a){return a.jda<=7;}).length;
+  document.getElementById('annivCount').textContent=sorted.length;
+  document.getElementById('kAnniv').textContent=urgents;
+  document.getElementById('sAnniv').textContent=urgents;
+
+  var list=document.getElementById('annivList');
+  if(!sorted.length){list.innerHTML='<div style="padding:10px;font-size:0.55rem;color:var(--muted);text-align:center">Importez anniversaires_fibre.csv<br>ou DADDI_Anniversaires.csv</div>';return;}
+
+  list.innerHTML=sorted.slice(0,15).map(function(a){
+    var col=a.jda<=3?'var(--red)':a.jda<=7?'var(--amber)':'var(--lime2)';
+    var borderCol=a.jda<=3?'#ff2233':a.jda<=7?'#ffb800':'#8acc1a';
+    var isAns2=a.type_anniv==='2ans';
+    return '<div class="anniv-item" style="border-left-color:'+borderCol+';cursor:pointer" onclick="analyserAnnivIA(\''+a.commune+'\','+a.jda+','+a.locaux+')">'
+      +'<div class="anniv-jda" style="color:'+col+'">J+'+a.jda+'</div>'
+      +'<div class="anniv-info"><div class="anniv-addr">'+a.adresse.substring(0,28)+'</div><div class="anniv-meta">'+a.commune+' ('+a.dept+') · '+a.locaux+' log · MESC '+a.mesc+'</div></div>'
+      +'<div class="anniv-type" style="background:'+(isAns2?'rgba(0,229,255,0.15)':'rgba(255,34,51,0.15)')+';color:'+(isAns2?'var(--cyan)':'var(--red)')+'">'+a.type_anniv+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// MÉTÉO
+// ═══════════════════════════════════════════════
+var SECTEURS_METEO=[
+  {n:'Valence',  lat:44.933,lon:4.892},
+  {n:'Grenoble', lat:45.188,lon:5.724},
+  {n:'Annecy',   lat:45.899,lon:6.129},
+  {n:'Aubenas',  lat:44.623,lon:4.392},
+  {n:'Roanne',   lat:46.034,lon:4.069},
+  {n:'Avignon',  lat:43.949,lon:4.806},
+  {n:'Chambery', lat:45.564,lon:5.919},
+  {n:'Bourg-B.', lat:46.205,lon:5.225},
+];
+
+async function chargerMeteo(){
+  var grid=document.getElementById('meteoGrid');
+  grid.innerHTML='';
+  for(var i=0;i<SECTEURS_METEO.length;i++){
+    var s=SECTEURS_METEO[i];
+    try{
+      var url='https://api.open-meteo.com/v1/forecast?latitude='+s.lat+'&longitude='+s.lon+'&current=precipitation,temperature_2m,windspeed_10m,weathercode&timezone=Europe/Paris&forecast_days=1';
+      var r=await fetch(url);var d=await r.json();
+      var cur=d.current||{};
+      var pluie=cur.precipitation||0,temp=cur.temperature_2m||15,vent=cur.windspeed_10m||0,wcode=cur.weathercode||0;
+      var score=100;
+      if(pluie>10)score-=40;else if(pluie>3)score-=20;else if(pluie>0)score-=8;
+      if(vent>50)score-=20;else if(vent>30)score-=10;
+      if(temp<2)score-=15;else if(temp<8)score-=5;
+      if(wcode>=80)score-=30;else if(wcode>=61)score-=15;else if(wcode>=51)score-=8;
+      score=Math.max(0,Math.min(100,score));
+      var col=score>=70?'var(--lime)':score>=50?'var(--amber)':'var(--red)';
+      var ic=score>=75?'☀️':score>=55?'⛅':score>=35?'🌧️':'⛈️';
+      meteoCache[s.n]={score:score,pluie:pluie,temp:temp,vent:vent};
+      var cell=document.createElement('div');
+      cell.className='meteo-cell';
+      cell.innerHTML='<div class="mc-ville">'+ic+' '+s.n+'</div><div class="mc-score" style="color:'+col+'">'+score+'<span style="font-size:0.45rem;color:var(--muted)">/100</span></div><div class="mc-sub">'+temp.toFixed(0)+'° · '+pluie.toFixed(1)+'mm</div><div class="mc-bar"><div class="mc-fill" style="width:'+score+'%;background:'+col+'"></div></div>';
+      cell.onclick=(function(sec,sc){return function(){analyserMeteoIA(sec,sc);};})(s,{score:score,pluie:pluie,temp:temp,vent:vent});
+      grid.appendChild(cell);
+    }catch(ex){
+      var cell=document.createElement('div');cell.className='meteo-cell';
+      cell.innerHTML='<div class="mc-ville">'+s.n+'</div><div class="mc-score" style="color:var(--muted)">—</div>';
+      grid.appendChild(cell);
+    }
+    await new Promise(function(res){setTimeout(res,200);});
+  }
+}
+
+// ═══════════════════════════════════════════════
+// ALERTES CUIVRE
+// ═══════════════════════════════════════════════
+var CUIVRE_ALERTES=[
+  {commune:'Bourg-de-Péage',dept:'26',date:'2026-12-31',jours:247},
+  {commune:'Romans-sur-Isère',dept:'26',date:'2027-03-31',jours:337},
+  {commune:'Crest',dept:'26',date:'2026-09-30',jours:155},
+  {commune:'Die',dept:'26',date:'2027-06-30',jours:428},
+  {commune:'Nyons',dept:'26',date:'2026-10-31',jours:186},
+  {commune:'Annonay',dept:'07',date:'2026-11-30',jours:216},
+  {commune:'Aubenas',dept:'07',date:'2027-01-31',jours:278},
+  {commune:'Le Coteau',dept:'42',date:'2026-08-31',jours:125},
+  {commune:'Charlieu',dept:'42',date:'2026-07-31',jours:94},
+  {commune:'Ugine',dept:'73',date:'2026-09-30',jours:155},
+];
+
+function afficherCuivre(){
+  var sorted=CUIVRE_ALERTES.slice().sort(function(a,b){return a.jours-b.jours;});
+  document.getElementById('cuivreCount').textContent=sorted.length;
+  document.getElementById('cuivreList').innerHTML=sorted.map(function(c){
+    var col=c.jours<120?'var(--red)':c.jours<240?'var(--amber)':'var(--muted)';
+    var arg=c.jours<120?'URGENT':'PRÉPARER';
+    return '<div class="cuivre-item" style="cursor:pointer" onclick="analyserCuivreIA(\''+c.commune+'\','+c.jours+')">'
+      +'<div class="cuivre-commune">'+c.commune+' ('+c.dept+')</div>'
+      +'<div class="cuivre-date" style="color:'+col+'">Arrêt '+c.date+' · '+c.jours+'J — '+arg+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// CONSEILS IA GÉNÉRÉS
+// ═══════════════════════════════════════════════
+function setMode(mode,btn){
+  modeActuel=mode;
+  document.querySelectorAll('.mode-btn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  genererConseils();
+}
+
+async function genererConseils(){
+  if(!points.length&&!annivData.length){toast('IMPORTEZ DES DONNÉES D\'ABORD',true);return;}
+  document.getElementById('oracleStatus').textContent='ANALYSE IA EN COURS...';
+
+  var hlm=getHLMIsolos();
+  var annivUrgents=annivData.filter(function(a){return a.jda<=7;});
+  var topMeteo=Object.entries(meteoCache).sort(function(a,b){return b[1].score-a[1].score;}).slice(0,3).map(function(e){return e[0]+'('+e[1].score+')';}).join(', ');
+  var cuivreUrgents=CUIVRE_ALERTES.filter(function(c){return c.jours<120;});
+
+  var prompt='Génère 4 conseils de prospection ultra-concrets pour aujourd\'hui. '
+    +'Données: '+hlm.length+' HLM éloignés (>20km grande ville), top HLM: '+hlm.slice(0,3).map(function(h){return h.commune+' '+h.locaux+'log score'+h.score.toFixed(0);}).join(', ')+'.'
+    +' '+annivData.length+' anniversaires dont '+annivUrgents.length+' urgents J+7.'
+    +' Meilleurs secteurs météo: '+topMeteo+'.'
+    +' Cuivre urgent (<120j): '+cuivreUrgents.map(function(c){return c.commune;}).join(', ')+'.'
+    +' Mode: '+modeActuel+'.'
+    +' Format JSON strict: [{"titre":"...","desc":"...","score":85,"tag":"HLM ISOLÉ","action":"...","priorite":"haute|moyenne|basse"}] · 4 objets · Max 20 mots par champ · Très actionnable · Français.';
+
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:prompt}]})
+    });
+    var d=await r.json();
+    var text=d.content&&d.content[0]?d.content[0].text:'';
+    var clean=text.replace(/```json|```/g,'').trim();
+    var conseils=JSON.parse(clean);
+    afficherConseils(conseils);
+    document.getElementById('oracleStatus').textContent='ANALYSE COMPLÈTE · '+conseils.length+' CONSEILS GÉNÉRÉS · '+new Date().toLocaleTimeString('fr');
+  }catch(ex){
+    // Conseils de secours
+    var defConseils=[
+      {titre:'HLM ISOLÉS PRIORITÉ',desc:''+hlm.length+' immeubles éloignés sans concurrence directe — prospectez aujourd\'hui',score:92,tag:'HLM',action:'Cibler '+hlm.slice(0,2).map(function(h){return h.commune;}).join(' et '),priorite:'haute'},
+      {titre:'ANNIVERSAIRES J+7',desc:''+annivUrgents.length+' clients au plein tarif à recontacter MAINTENANT',score:88,tag:'ANNIV',action:'Appeler '+annivUrgents.slice(0,2).map(function(a){return a.commune;}).join(', '),priorite:'haute'},
+      {titre:'CUIVRE CRITIQUE',desc:'Charlieu (94j) — argument parfait : "votre cuivre s\'arrête bientôt"',score:75,tag:'CUIVRE',action:'Prospectez Charlieu et Le Coteau',priorite:'moyenne'},
+      {titre:'SECTEUR MÉTÉO',desc:'Vérifiez la météo locale avant de planifier les zones en altitude',score:60,tag:'MÉTÉO',action:'Éviter les secteurs montagnards si pluie',priorite:'basse'},
+    ];
+    afficherConseils(defConseils);
+    document.getElementById('oracleStatus').textContent='ANALYSE LOCALE (IA INDISPONIBLE)';
+  }
+}
+
+function afficherConseils(conseils){
+  var colors={haute:'var(--lime)',moyenne:'var(--amber)',basse:'var(--muted)'};
+  var borderColors={haute:'#2a3a08',moyenne:'rgba(255,184,0,0.15)',basse:'var(--wire)'};
+  var tags={HLM:'var(--amber)',ANNIV:'var(--red)',CUIVRE:'var(--red)',MÉTÉO:'var(--cyan)',GLOBAL:'var(--lime)'};
+
+  var html='';
+  conseils.forEach(function(c,i){
+    var col=colors[c.priorite]||'var(--lime)';
+    var tagCol=tags[c.tag]||'var(--lime)';
+    var full=i>=2?'conseil-full':'';
+    html+='<div class="conseil-card '+full+'" style="border-color:var(--wire2)">'
+      +'<div class="cc-tag"><div class="cc-tag-dot" style="background:'+tagCol+'"></div><span style="color:'+tagCol+'">'+c.tag+'</span> <span style="color:var(--wire2)">·</span> <span style="color:'+col+'">'+c.priorite.toUpperCase()+'</span></div>'
+      +'<div class="cc-title">'+c.titre+'</div>'
+      +'<div class="cc-desc">'+c.desc+'</div>'
+      +'<div class="cc-score"><span style="color:'+col+'">'+c.score+'</span><div class="cc-bar"><div class="cc-fill" style="width:'+c.score+'%;background:'+col+'"></div></div><span class="cc-val" style="color:'+col+'">'+c.score+'%</span></div>'
+      +'<button class="cc-action" onclick="quickQuestion(\''+c.action.replace(/'/g,"\\'")+' — donne moi un script précis\')">'+(c.action||'Analyser →')+'</button>'
+      +'</div>';
+  });
+  document.getElementById('conseilGrid').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
+// IA QUERIES
+// ═══════════════════════════════════════════════
+async function envoyerAI(msgOvr){
+  var input=document.getElementById('aiInput');
+  var msg=msgOvr||input.value.trim();if(!msg)return;input.value='';
+
+  var hlm=getHLMIsolos();
+  var annivUrgents=annivData.filter(function(a){return a.jda<=7;});
+  var topMeteo=Object.entries(meteoCache).sort(function(a,b){return b[1].score-a[1].score;}).slice(0,2).map(function(e){return e[0];}).join(' et ');
+
+  var sys='Tu es ORACLE, expert Bouygues Telecom prospection fibre AuRA. Spécialiste HLM isolés (>20km grandes villes), anniversaires clients, nouvelles ouvertures ARCEP. '
+    +'Données actuelles: '+points.length+' adresses, '+hlm.length+' HLM isolés (top: '+hlm.slice(0,2).map(function(h){return h.commune+'('+h.locaux+'log,score'+h.score.toFixed(0)+')';}).join(', ')+'), '
+    +annivData.length+' anniversaires dont '+annivUrgents.length+' J+7. '
+    +'Meilleure météo: '+topMeteo+'. '
+    +'Contrats aujourd\'hui: '+contrats+'. Taux conv.: '+(portes>0?(contrats/portes*100).toFixed(1):0)+'%. '
+    +'Réponds ULTRA-CONCRET, court, actionnable. Scripts de vente si demandé. Emojis. Français. Max 150 mots.';
+
+  ajouterMsg(msg,'user');
+  var typing=document.createElement('div');typing.className='ai-typing';typing.innerHTML='<span></span><span></span><span></span>';
+  document.getElementById('aiMsgs').appendChild(typing);scrollAI();
+
+  try{
+    var r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sys,messages:[{role:'user',content:msg}]})});
+    var d=await r.json();typing.remove();
+    ajouterMsg(d.content&&d.content[0]?d.content[0].text:'ERREUR.','ai');
+  }catch(e){typing.remove();ajouterMsg('CONNEXION IA INDISPONIBLE.','ai');}
+}
+
+function quickQuestion(q){envoyerAI(q);}
+
+function analyserHLM(){
+  var hlm=getHLMIsolos();
+  if(!hlm.length){toast('AUCUN HLM ISOLÉ',true);return;}
+  var prompt='Analyse ces HLM éloignés: '+hlm.slice(0,5).map(function(h){return h.commune+' '+h.locaux+'log '+h.distGV.toFixed(0)+'km ville score'+h.score.toFixed(0);}).join(', ')+'. Stratégie optimale, arguments principaux, ordre de prospection ?';
+  envoyerAI(prompt);
+}
+
+function analyserAnniv(){
+  if(!annivData.length){toast('AUCUN ANNIVERSAIRE',true);return;}
+  var urgents=annivData.filter(function(a){return a.jda<=7;});
+  var prompt='Anniversaires urgents: '+urgents.slice(0,5).map(function(a){return a.commune+' J+'+a.jda+' '+a.locaux+'log '+a.type_anniv;}).join(', ')+'. Script de relance et stratégie de reconversion ?';
+  envoyerAI(prompt);
+}
+
+function analyserAdresseIA(el){
+  var adr=el.getAttribute('data-adr'),commune=el.getAttribute('data-commune'),locaux=el.getAttribute('data-locaux'),score=el.getAttribute('data-score'),dist=el.getAttribute('data-dist');
+  envoyerAI('Fiche immeuble: '+adr+' à '+commune+'. '+locaux+' logements, score '+score+', à '+dist+'km grande ville. Arguments HLM isolé, objections probables, script de vente ?');
+}
+
+function analyserAnnivIA(commune,jda,locaux){
+  envoyerAI('Client anniversaire J+'+jda+' à '+commune+' — '+locaux+' logements. Script de relance urgent, argument pour reconvertir avant la fin du délai ?');
+}
+
+function analyserMeteoIA(secteur,meteo){
+  envoyerAI('Météo aujourd\'hui à '+secteur.n+': '+meteo.temp+'°C, '+meteo.pluie+'mm pluie, score '+meteo.score+'/100. Quelles zones prospecter aujourd\'hui ? Stratégie adaptée ?');
+}
+
+function analyserCuivreIA(commune,jours){
+  envoyerAI('Cuivre de '+commune+' s\'arrête dans '+jours+' jours. Argument commercial exact à utiliser, script pour le client qui hésite ?');
+}
+
+function ajouterMsg(text,role){
+  var div=document.createElement('div');div.className='ai-msg '+role;div.textContent=text;
+  document.getElementById('aiMsgs').appendChild(div);scrollAI();
+}
+function scrollAI(){var m=document.getElementById('aiMsgs');m.scrollTop=m.scrollHeight;}
+
+// ═══════════════════════════════════════════════
+// STATS & TICKER
+// ═══════════════════════════════════════════════
+function majStats(){
+  var hlmN=getHLMIsolos().length;
+  var annivUrgN=annivData.filter(function(a){return a.jda<=7;}).length;
+  var total=points.length;
+  var scoreMoy=total?Math.round(points.reduce(function(s,p){return s+p.score;},0)/total):0;
+
+  document.getElementById('kScore').textContent=scoreMoy||'—';
+  document.getElementById('kOuv').textContent=ouverturesData.length||'—';
+  document.getElementById('sTotal').textContent=total;
+  document.getElementById('sContrats').textContent=contrats;
+  document.getElementById('sPortes').textContent=portes;
+  document.getElementById('sTaux').textContent=portes>0?(contrats/portes*100).toFixed(1)+'%':'0%';
+  document.getElementById('kContrats').textContent=contrats;
+  document.getElementById('kTaux').textContent=portes>0?(contrats/portes*100).toFixed(1)+'%':'0%';
+
+  document.getElementById('barInfo').textContent='ORACLE · '+total+' ADRESSES · '+hlmN+' HLM ISOLÉS · '+annivData.length+' ANNIVERSAIRES · '+annivUrgN+' URGENTS J+7';
+}
+
+function majTicker(){
+  var hlm=getHLMIsolos().length;
+  var annivUrgN=annivData.filter(function(a){return a.jda<=7;}).length;
+  var scoreMoy=points.length?Math.round(points.reduce(function(s,p){return s+p.score;},0)/points.length):0;
+  var cuivreN=CUIVRE_ALERTES.filter(function(c){return c.jours<120;}).length;
+  document.getElementById('tk-hlm').textContent=hlm;
+  document.getElementById('tk-anniv').textContent=annivUrgN;
+  document.getElementById('tk-ouv').textContent=ouverturesData.length||'0';
+  document.getElementById('tk-score').textContent=scoreMoy||'—';
+  document.getElementById('tk-cuivre').textContent=cuivreN;
+  document.getElementById('tk-conv').textContent=portes>0?(contrats/portes*100).toFixed(1)+'%':'0%';
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════
+function exporterRapport(){
+  var hlm=getHLMIsolos();
+  var annivUrgents=annivData.filter(function(a){return a.jda<=7;});
+  var lines=['ORACLE RAPPORT — '+new Date().toLocaleDateString('fr'),'','═ HLM ISOLÉS ('+hlm.length+') ═'];
+  hlm.slice(0,20).forEach(function(h,i){lines.push((i+1)+'. '+h.adresse+' — '+h.commune+' ('+h.dept+') · '+h.locaux+' log · Score '+h.score.toFixed(0)+' · '+h.distGV.toFixed(0)+'km ville');});
+  lines.push('','═ ANNIVERSAIRES URGENTS ('+annivUrgents.length+') ═');
+  annivUrgents.forEach(function(a){lines.push('J+'+a.jda+' — '+a.adresse+' — '+a.commune+' ('+a.dept+') · '+a.locaux+' log · '+a.type_anniv);});
+  lines.push('','═ ALERTES CUIVRE ═');
+  CUIVRE_ALERTES.forEach(function(c){lines.push(c.commune+' ('+c.dept+') — Arrêt '+c.date+' ('+c.jours+'j)');});
+  var csv=lines.join('\n');
+  var url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/plain'}));
+  Object.assign(document.createElement('a'),{href:url,download:'oracle_rapport_'+new Date().toISOString().split('T')[0]+'.txt'}).click();
+  URL.revokeObjectURL(url);
+  toast('RAPPORT EXPORTÉ');
+}
+
+// TOAST
+var _tt;
+function toast(msg,err){
+  var t=document.getElementById('toast');t.textContent=msg;
+  t.className='toast on'+(err?' err':'');
+  clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('on');},3000);
+}
+
+// ─── INIT ───────────────────────────────────────
+chargerMeteo();
+afficherCuivre();
+majTicker();
+setInterval(majTicker,30000);
+// Auto-générer conseils de base
+setTimeout(function(){
+  document.getElementById('oracleStatus').textContent='EN ATTENTE — IMPORTEZ VOS CSV POUR ACTIVER L\'ANALYSE IA';
+},500);
+</script>
+</body>
+</html>
