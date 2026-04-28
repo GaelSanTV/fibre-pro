@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NEXUS HUB">
+<meta name="theme-color" content="#060402">
+<title>NEXUS HUB — Fibre Bouygues AuRA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Rajdhani:wght@400;500;600&display=swap');
+:root{--bg:#060402;--panel:#0c0804;--border:#2a1e08;--fire:#ff6600;--fire2:#ff4400;--ember:#ffaa00;--green:#00ff88;--cyan:#00ccff;--text:#fff8ee;--muted:#664422;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,102,0,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,102,0,0.03) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0;}
+
+/* HEADER */
+.hdr{padding:20px 16px 14px;text-align:center;border-bottom:1px solid var(--border);position:relative;z-index:1;}
+.hdr::after{content:'';display:block;height:2px;background:linear-gradient(90deg,transparent,var(--fire),transparent);margin-top:14px;opacity:0.6;}
+.logo{font-family:'Chakra Petch',sans-serif;font-size:1.8rem;font-weight:700;color:var(--fire);text-shadow:0 0 30px var(--fire),0 0 60px rgba(255,102,0,0.3);letter-spacing:0.08em;}
+.logo span{color:var(--text);}
+.sub{font-size:0.65rem;color:var(--muted);letter-spacing:0.25em;margin-top:4px;}
+.live{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:0.55rem;color:var(--fire);letter-spacing:0.15em;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--fire);box-shadow:0 0 6px var(--fire);animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.2;}}
+
+/* BODY */
+.body{padding:14px;position:relative;z-index:1;max-width:500px;margin:0 auto;}
+
+/* SECTION */
+.section{margin-bottom:16px;}
+.section-title{font-family:'Chakra Petch',sans-serif;font-size:0.5rem;color:var(--muted);letter-spacing:0.25em;text-transform:uppercase;margin-bottom:8px;padding:0 2px;}
+
+/* APP CARD */
+.app-card{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;margin-bottom:6px;
+  background:rgba(12,8,4,0.9);
+  border:1px solid var(--border);
+  text-decoration:none;color:var(--text);
+  transition:all 0.18s;position:relative;overflow:hidden;
+}
+.app-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--fire);}
+.app-card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;opacity:0;}
+.app-card:active{background:rgba(255,102,0,0.08);transform:scale(0.99);}
+.app-card.new::after{background:var(--green);opacity:1;box-shadow:0 0 8px var(--green);}
+.app-card.new::before{background:var(--green);}
+.app-card.ai::after{background:var(--cyan);opacity:1;box-shadow:0 0 8px var(--cyan);}
+.app-card.ai::before{background:var(--cyan);}
+
+.app-icon{font-size:1.6rem;flex-shrink:0;width:36px;text-align:center;}
+.app-info{flex:1;min-width:0;}
+.app-name{font-family:'Chakra Petch',sans-serif;font-size:0.88rem;font-weight:700;letter-spacing:0.05em;margin-bottom:2px;}
+.app-desc{font-size:0.6rem;color:var(--muted);letter-spacing:0.04em;line-height:1.4;}
+.app-badge{font-family:'Chakra Petch',sans-serif;font-size:0.48rem;padding:2px 7px;border:1px solid;letter-spacing:0.1em;flex-shrink:0;}
+.badge-new{border-color:var(--green);color:var(--green);}
+.badge-ai{border-color:var(--cyan);color:var(--cyan);}
+.badge-core{border-color:var(--fire);color:var(--fire);}
+.badge-tool{border-color:var(--muted);color:var(--muted);}
+
+.arrow{color:var(--muted);font-size:0.7rem;flex-shrink:0;}
+
+/* FOOTER */
+.footer{text-align:center;padding:20px 16px;font-size:0.52rem;color:var(--muted);letter-spacing:0.1em;border-top:1px solid var(--border);position:relative;z-index:1;}
+.footer span{color:var(--fire);display:block;font-family:'Chakra Petch',sans-serif;font-size:0.6rem;margin-bottom:4px;}
+
+/* TIME */
+.time-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:rgba(12,8,4,0.8);border-bottom:1px solid var(--border);font-family:'Chakra Petch',sans-serif;font-size:0.55rem;position:relative;z-index:1;}
+.time-val{color:var(--fire3, #ff8800);letter-spacing:0.08em;}
+.time-loc{color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="time-bar">
+  <span class="time-loc">VALENCE 26 · AuRA</span>
+  <span class="time-val" id="clock">--:--:--</span>
+  <span class="time-loc">FIBRE BOUYGUES</span>
+</div>
+
+<div class="hdr">
+  <div class="logo">NEXUS<span>·HUB</span></div>
+  <div class="sub">SYSTÈME FIBRE BOUYGUES · AUVERGNE-RHÔNE-ALPES</div>
+  <div class="live"><div class="live-dot"></div>SYSTÈME OPÉRATIONNEL</div>
+</div>
+
+<div class="body">
+
+  <!-- INTELLIGENCE -->
+  <div class="section">
+    <div class="section-title">◈ Intelligence IA</div>
+
+    <a href="nexus_intel.html" class="app-card new">
+      <div class="app-icon">🧠</div>
+      <div class="app-info">
+        <div class="app-name">NEXUS·INTEL</div>
+        <div class="app-desc">Conseil prospection IA · Algo 20 critères · Fiche immeuble · Ticker live · HLM · Villages cachés</div>
+      </div>
+      <span class="app-badge badge-new">NEW</span>
+      <div class="arrow">›</div>
+    </a>
+
+    <a href="fibreai.html" class="app-card ai">
+      <div class="app-icon">⚡</div>
+      <div class="app-info">
+        <div class="app-name">FIBRE·NEXUS</div>
+        <div class="app-desc">Mission Control · Carte IA · Score temps réel · Voix · GPS · Radar · Neural Dashboard</div>
+      </div>
+      <span class="app-badge badge-ai">IA</span>
+      <div class="arrow">›</div>
+    </a>
+  </div>
+
+  <!-- CARTE -->
+  <div class="section">
+    <div class="section-title">◈ Cartographie</div>
+
+    <a href="fibremap.html" class="app-card new">
+      <div class="app-icon">🗺️</div>
+      <div class="app-info">
+        <div class="app-name">FibreMap</div>
+        <div class="app-desc">Carte unifiée Orange+SFR+Anniv+DADDI · Clustering coloré · Chaleur prospection · Import direct</div>
+      </div>
+      <span class="app-badge badge-new">v3</span>
+      <div class="arrow">›</div>
+    </a>
+  </div>
+
+  <!-- CIRCUIT -->
+  <div class="section">
+    <div class="section-title">◈ Circuits & Prospection</div>
+
+    <a href="circuit_optimizer_v4.html" class="app-card">
+      <div class="app-icon">🚗</div>
+      <div class="app-info">
+        <div class="app-name">CircuitPro v4</div>
+        <div class="app-desc">Optimisation tournée · Nearest-neighbor · Multi-opérateur · Compteur live · Tri libre</div>
+      </div>
+      <span class="app-badge badge-core">CORE</span>
+      <div class="arrow">›</div>
+    </a>
+
+    <a href="circuit_builder.html" class="app-card new">
+      <div class="app-icon">🏗️</div>
+      <div class="app-info">
+        <div class="app-name">CircuitBuilder</div>
+        <div class="app-desc">Créateur circuits vendeurs iPad · Sélection manuelle · Export CSV par vendeur · Optimisation</div>
+      </div>
+      <span class="app-badge badge-new">NEW</span>
+      <div class="arrow">›</div>
+    </a>
+
+    <a href="fibrevrp_vendeur.html" class="app-card">
+      <div class="app-icon">📱</div>
+      <div class="app-info">
+        <div class="app-name">FibreVRP Vendeur</div>
+        <div class="app-desc">App iPhone terrain · Import circuit · Tags rapides · Export journée</div>
+      </div>
+      <span class="app-badge badge-tool">TERRAIN</span>
+      <div class="arrow">›</div>
+    </a>
+  </div>
+
+  <!-- GESTION -->
+  <div class="section">
+    <div class="section-title">◈ Gestion & Analytics</div>
+
+    <a href="anniversaire_manager.html" class="app-card">
+      <div class="app-icon">🎂</div>
+      <div class="app-info">
+        <div class="app-name">AnnivFibre v2</div>
+        <div class="app-desc">Anniversaires clients · J+1→30 · Urgence colorée · Notes terrain · Analytics · Push iPhone</div>
+      </div>
+      <span class="app-badge badge-core">v2</span>
+      <div class="arrow">›</div>
+    </a>
+
+    <a href="dashboard_admin.html" class="app-card">
+      <div class="app-icon">📊</div>
+      <div class="app-info">
+        <div class="app-name">Dashboard Admin</div>
+        <div class="app-desc">ROI vendeurs · KPIs · Classement secteurs · Graphique activité · Import multi-vendeurs</div>
+      </div>
+      <span class="app-badge badge-tool">ADMIN</span>
+      <div class="arrow">›</div>
+    </a>
+  </div>
+
+</div>
+
+<div class="footer">
+  <span>NEXUS·HUB · FIBRE BOUYGUES AuRA</span>
+  VALENCE 26 · Depts 01·05·07·26·30·38·42·43·73·74·84
+</div>
+
+<script>
+setInterval(function(){
+  var n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString('fr');
+},1000);
+</script>
+</body>
+</html>
