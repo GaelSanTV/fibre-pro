@@ -360,6 +360,7 @@ input[type=file]{display:none;}
     <button class="hbtn" onclick="ouvrirItineraire()">ROUTE</button>
     <button class="hbtn" onclick="toggleRadar()">RADAR</button>
     <button class="hbtn" onclick="configurerEquipe()">ÉQUIPE</button>
+    <button class="hbtn" onclick="demanderApiKey(function(){})" style="color:#ffaa00">🔑 CLÉ</button>
     <button class="hbtn ai" onclick="ouvrirAI()">⚡ IA</button>
   </div>
 </div>
@@ -567,7 +568,7 @@ var legendEditing=false;
 // ════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',function(){
   map=L.map('map',{zoomControl:false,attributionControl:false}).setView([45.1,5.7],8);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd'}).addTo(map);
   L.control.zoom({position:'bottomright'}).addTo(map);
 
   function mkCluster(col){
@@ -1050,8 +1051,55 @@ function traiterCmd(cmd){
 }
 
 // ════════════════════════════════════════════
-// AI
+// GESTION CLÉ API ANTHROPIC
 // ════════════════════════════════════════════
+function getApiKey(){return localStorage.getItem('nexus_api_key')||'';}
+
+function demanderApiKey(cb){
+  var ex=getApiKey();
+  var m=document.createElement('div');
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.94);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML='<div style="background:#020408;border:1px solid #00ff88;padding:24px;width:100%;max-width:380px;font-family:IBM Plex Mono,monospace;">'
+    +'<div style="font-size:0.9rem;font-weight:700;color:#00ff88;margin-bottom:6px;text-shadow:0 0 10px #00ff88;letter-spacing:0.1em">◈ CLÉ API ANTHROPIC</div>'
+    +'<div style="font-size:0.6rem;color:#2a6644;margin-bottom:14px;line-height:1.7">Nécessaire pour activer l\'IA.<br>Obtenir sur <b style="color:#00cc66">console.anthropic.com</b><br>API Keys → Create Key → Copier sk-ant-...<br>Stockée uniquement sur cet appareil.</div>'
+    +'<input id="apiKeyInput" type="password" placeholder="sk-ant-..." value="'+ex+'" style="width:100%;padding:10px 12px;background:rgba(0,255,136,0.04);border:1px solid #004422;color:#c0ffd8;font-family:IBM Plex Mono,monospace;font-size:0.72rem;outline:none;margin-bottom:10px;">'
+    +'<div style="display:flex;gap:8px;">'
+    +'<button onclick="sauverKey()" style="flex:1;padding:10px;background:#004422;border:1px solid #00ff88;color:#00ff88;font-family:IBM Plex Mono,monospace;font-size:0.6rem;font-weight:700;cursor:pointer;letter-spacing:0.1em;">SAUVEGARDER</button>'
+    +'<button onclick="this.closest(\'[style*=fixed]\').remove()" style="padding:10px 14px;background:transparent;border:1px solid #1a1a44;color:#2a6644;font-family:IBM Plex Mono,monospace;font-size:0.6rem;cursor:pointer;">ANNULER</button>'
+    +'</div></div>';
+  document.body.appendChild(m);
+  window._apiCb=cb;
+}
+
+function sauverKey(){
+  var k=document.getElementById('apiKeyInput').value.trim();
+  if(!k)return;
+  localStorage.setItem('nexus_api_key',k);
+  var m=document.querySelector('[style*="position:fixed"][style*="z-index:9999"]');
+  if(m)m.remove();
+  toast('CLÉ API SAUVEGARDÉE ✅');
+  if(window._apiCb)window._apiCb();
+}
+
+async function callClaude(system,message,maxTokens){
+  var key=getApiKey();
+  if(!key){demanderApiKey(function(){});return null;}
+  try{
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:maxTokens||300,system:system||'',messages:[{role:'user',content:message}]})
+    });
+    if(resp.status===401){localStorage.removeItem('nexus_api_key');demanderApiKey(function(){});return null;}
+    var d=await resp.json();
+    return d.content&&d.content[0]?d.content[0].text:null;
+  }catch(e){return null;}
+}
 function ouvrirAI(){document.getElementById('aiPanel').classList.add('on');}
 function fermerAI(){document.getElementById('aiPanel').classList.remove('on');}
 function quickAI(msg){document.getElementById('aiInput').value=msg;envoyerAI();}
@@ -1073,13 +1121,10 @@ async function envoyerAI(msgOvr){
   document.getElementById('aiMsgs').appendChild(typing);scrollAI();
   document.getElementById('aiStatus').textContent='TRAITEMENT...';
 
-  try{
-    var resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:250,system:sys,messages:[{role:'user',content:msg}]})});
-    var data=await resp.json();typing.remove();
-    ajouterMsg(data.content&&data.content[0]?data.content[0].text:'ERREUR CONNEXION.','ai');
-    document.getElementById('aiStatus').textContent='SYSTÈME NEURAL ACTIF';
-  }catch(err){typing.remove();ajouterMsg('CONNEXION IA IMPOSSIBLE.','ai');document.getElementById('aiStatus').textContent='HORS LIGNE';}
-}
+  var rep=await callClaude(sys,msg,250);
+  typing.remove();
+  ajouterMsg(rep||'Configurez votre clé API → bouton 🔑 CLÉ IA','ai');
+  document.getElementById('aiStatus').textContent=rep?'SYSTÈME NEURAL ACTIF':'CLÉ API REQUISE';
 function ajouterMsg(text,role){var div=document.createElement('div');div.className='ai-msg '+role;div.textContent=text;document.getElementById('aiMsgs').appendChild(div);scrollAI();}
 function scrollAI(){var m=document.getElementById('aiMsgs');m.scrollTop=m.scrollHeight;}
 

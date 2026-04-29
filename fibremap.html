@@ -363,9 +363,10 @@ document.addEventListener('DOMContentLoaded', function(){
     bounceAtZoomLimits:false
   }).setView([45.1, 5.7], 8);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     maxZoom:19,
-    crossOrigin:true
+    subdomains:'abcd',
+    attribution:'&copy; CartoDB'
   }).addTo(map);
 
   // Fix iOS — forcer recalcul taille après chargement
