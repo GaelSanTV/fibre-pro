@@ -182,6 +182,11 @@ input[type=file]{display:none;}
       <input type="range" id="scoreSlider" min="0" max="100" value="0" oninput="filtrerScore(this.value)">
       <span class="score-val" id="scoreVal">0</span>
     </div>
+    <div class="score-inner" style="margin-top:4px">
+      <label>Logements min</label>
+      <input type="range" id="locauxSlider" min="0" max="100" step="5" value="0" oninput="filtrerLocaux(this.value)">
+      <span class="score-val" id="locauxVal">0</span>
+    </div>
   </div>
 
   <div class="live-ctr" id="liveCtr" onclick="resetCompteur()">
@@ -225,6 +230,7 @@ input[type=file]{display:none;}
     <button class="bb-btn" onclick="toggleCluster()">🔵</button>
     <button class="bb-btn blue" onclick="exporterActifs()">📤 Actifs</button>
     <button class="bb-btn gold" onclick="exporterTraites()">📋 Traités</button>
+    <button class="bb-btn" onclick="exporterCSVComplet()" style="color:#ff3355;border-color:rgba(255,34,68,0.3)">🗑️ CSV nettoyé</button>
   </div>
 </div>
 
@@ -244,6 +250,9 @@ input[type=file]{display:none;}
     <input type="file" id="fDADDI" accept=".csv" onchange="importerDADDI(event)">
     <div class="iz" onclick="document.getElementById('fAnnivD').click()"><div class="iz-ic">🎂</div><div class="iz-t">DADDI Anniversaires</div><div class="iz-s">DADDI_Anniversaires_XXXX.csv — géocodage auto</div></div>
     <input type="file" id="fAnnivD" accept=".csv" onchange="importerAnnivDADDI(event)">
+    <div class="iz" onclick="document.getElementById('fFree').click()"><div class="iz-ic">🟣</div><div class="iz-t">Free / VAD — Nouvelles ouvertures</div><div class="iz-s">recherche_vad_VILLES_XXXX.csv — villes avec augmentation</div></div>
+    <input type="file" id="fFree" accept=".csv" onchange="importerVAD(event)">
+    <div class="iz" onclick="nettoyerDoublons()" style="border-color:rgba(255,170,0,0.3)"><div class="iz-ic">🧹</div><div class="iz-t">Nettoyer les doublons</div><div class="iz-s">Fusionne les adresses identiques</div></div>
     <button class="modal-close" onclick="fermerImport()">✕ Fermer</button>
   </div>
 </div>
@@ -279,6 +288,7 @@ input[type=file]{display:none;}
     <button class="sbtn full" onclick="doAction('verifier')">🔍 À vérifier Orange/SFR</button>
     <button class="sbtn maps" onclick="ouvMaps()">📍 Ouvrir dans Maps</button>
     <button class="sbtn route" onclick="ajouterIti()">🗺️ Ajouter à l'itinéraire</button>
+    <button class="sbtn" onclick="supprimerDefinitif()" style="grid-column:span 2;border-color:rgba(255,34,68,0.5);color:#ff2244;background:rgba(255,34,68,0.05)">🗑️ SUPPRIMER DÉFINITIVEMENT</button>
   </div>
   <button class="sh-cancel" onclick="fermerSheet()">Annuler</button>
 </div>
@@ -305,14 +315,13 @@ input[type=file]{display:none;}
 var points = [], traites = [], chaleurVilles = [], itineraire = [];
 var vistesVilles = {}; // commune → {nb, minJ}
 var histoImmeuble = {};
-var scoreMin = 0, clusterOn = true;
+var scoreMin = 0, locauxMin = 0, clusterOn = true;
 var contrats = 0, portes = 0;
 var selectedPoint = null;
-var layersOn = {orange:true,sfr:true,both:true,anniv:true,chaleur:true};
 
 // Layers — initialisés après load
-var map, layerOrange, layerSFR, layerBoth, layerAnniv, layerChaleur, layerDADDI;
-var layersOn = {orange:true,sfr:true,both:true,anniv:true,chaleur:true,daddi:true};
+var map, layerOrange, layerSFR, layerBoth, layerAnniv, layerChaleur, layerDADDI, layerFree;
+var layersOn = {orange:true,sfr:true,both:true,anniv:true,chaleur:true,daddi:true,free:true};
 
 // ═══════════════════════════════════════════
 // INIT MAP
@@ -341,9 +350,10 @@ document.addEventListener('DOMContentLoaded', function(){
   layerBoth    = L.markerClusterGroup(makeClusterOpts('#ffd700','#ffd700'));
   layerAnniv   = L.markerClusterGroup(makeClusterOpts('#ff6eb4','#ff6eb4'));
   layerDADDI   = L.markerClusterGroup(makeClusterOpts('#00c8ff','#00c8ff'));
+  layerFree    = L.layerGroup(); // Cercles chaleur VAD
   layerChaleur = L.layerGroup();
 
-  [layerOrange,layerSFR,layerBoth,layerAnniv,layerDADDI,layerChaleur].forEach(function(l){map.addLayer(l);});
+  [layerOrange,layerSFR,layerBoth,layerAnniv,layerDADDI,layerFree,layerChaleur].forEach(function(l){map.addLayer(l);});
 
   map.on('click', function(){
     document.getElementById('searchResults').style.display = 'none';
@@ -357,6 +367,7 @@ function getColor(p){
   if(p.ptype==='both')  return '#ffd700';
   if(p.ptype==='sfr')   return '#b06cff';
   if(p.ptype==='daddi') return '#00c8ff';
+  if(p.ptype==='free')  return '#cc44ff';
   if(p.ptype==='anniv') return p.jours_anniv<=7?'#ff2d55':p.jours_anniv<=20?'#ff9f0a':'#30d158';
   var c=p.couleur;
   if(c==='red')    return '#ff3355';
@@ -374,7 +385,7 @@ function getLayer(p){
   if(p.ptype==='both')  return layerBoth;
   if(p.ptype==='sfr')   return layerSFR;
   if(p.ptype==='anniv') return layerAnniv;
-  if(p.ptype==='daddi') return layerDADDI;
+  if(p.ptype==='daddi'||p.ptype==='free') return layerDADDI;
   return layerOrange;
 }
 // ═══════════════════════════════════════════
@@ -451,7 +462,7 @@ function placerMarkers(){
   [layerOrange,layerSFR,layerBoth,layerAnniv,layerDADDI].forEach(function(l){l.clearLayers();});
 
   var actifs = points.filter(function(p){
-    return !['done','bad','concurrent','signé'].includes(p.action) && p.score >= scoreMin;
+    return !['done','bad','concurrent','signé'].includes(p.action) && p.score >= scoreMin && (p.locaux||0) >= locauxMin;
   });
 
   // Calculer score surpuissant sur tous les points
@@ -710,12 +721,14 @@ function placerChaleur(){
 function majChips(){
   var nb=function(t){return points.filter(function(p){return p.ptype===t&&!['done','bad','concurrent','signé'].includes(p.action);}).length;};
   var nv=new Set(chaleurVilles.map(function(v){return v.ville;})).size;
+  var nf=(vadVilles||[]).length;
   var chips=[
     {type:'both',   col:'#ffd700',val:nb('both'),   lbl:'Both'},
     {type:'orange', col:'#ff8c00',val:nb('orange'),  lbl:'Orange'},
     {type:'sfr',    col:'#b06cff',val:nb('sfr'),     lbl:'SFR'},
     {type:'anniv',  col:'#ff6eb4',val:nb('anniv'),   lbl:'Anniv.'},
     {type:'daddi',  col:'#00c8ff',val:nb('daddi'),   lbl:'DADDI'},
+    {type:'free',   col:'#cc44ff',val:nf,             lbl:'Free VAD'},
     {type:'chaleur',col:'#ff5500',val:nv,             lbl:'Visites'},
   ];
   document.getElementById('chips').innerHTML=chips.map(function(ch){
@@ -727,7 +740,7 @@ function toggleLayer(type, el){
   if(!map) return;
   layersOn[type]=!layersOn[type];
   el.classList.toggle('on',layersOn[type]);
-  var l={orange:layerOrange,sfr:layerSFR,both:layerBoth,anniv:layerAnniv,chaleur:layerChaleur,daddi:layerDADDI}[type];
+  var l={orange:layerOrange,sfr:layerSFR,both:layerBoth,anniv:layerAnniv,chaleur:layerChaleur,daddi:layerDADDI,free:layerFree}[type];
   if(l){if(layersOn[type]) map.addLayer(l); else map.removeLayer(l);}
 }
 
@@ -746,6 +759,12 @@ function toggleScoreBar(){
 function filtrerScore(val){
   scoreMin=parseInt(val);
   document.getElementById('scoreVal').textContent=val;
+  placerMarkers();
+}
+
+function filtrerLocaux(val){
+  locauxMin=parseInt(val);
+  document.getElementById('locauxVal').textContent=val+'+';
   placerMarkers();
 }
 
@@ -896,6 +915,76 @@ function viderRecherche(){
 }
 
 // ═══════════════════════════════════════════
+// SUPPRESSION DÉFINITIVE + NETTOYAGE
+// ═══════════════════════════════════════════
+function supprimerDefinitif(){
+  if(!selectedPoint) return;
+  var p = selectedPoint;
+  if(!confirm('Supprimer définitivement "'+p.adresse+'" ?\nCette adresse sera retirée de la liste ET du prochain export CSV.')) return;
+
+  // Retirer du tableau points
+  var idx = points.findIndex(function(x){return x.id===p.id;});
+  if(idx>=0) points.splice(idx,1);
+
+  // Ajouter à la liste noire (pour éviter réimport)
+  if(!window.listeNoire) window.listeNoire=[];
+  window.listeNoire.push(p.id);
+
+  // Sauvegarder liste noire en localStorage
+  try{localStorage.setItem('fm_liste_noire',JSON.stringify(window.listeNoire));}catch(e){}
+
+  fermerSheet();
+  placerMarkers();
+  toast('🗑️ Supprimé — Export CSV mis à jour');
+}
+
+function exporterCSVComplet(){
+  // Export CSV nettoyé = actifs SANS les supprimés définitifs
+  var listeNoire = window.listeNoire||[];
+  var a = points.filter(function(p){
+    return !['done','bad','concurrent','signé'].includes(p.action)
+      && !listeNoire.includes(p.id);
+  });
+  if(!a.length){toast('Aucun point à exporter');return;}
+  var csv='adresse;commune;dept;locaux;lat;lon;score;couleur;operateur;ptype;mesc\n';
+  a.forEach(function(p){
+    var op=p.ptype==='both'?'both':p.ptype==='sfr'?'sfr':p.ptype==='free'?'free':'orange';
+    csv+=p.adresse+';'+p.commune+';'+p.dept+';'+p.locaux+';'
+      +p.lat+';'+p.lon+';'+p.score+';'+(p.couleur||'')+';'
+      +op+';'+p.ptype+';'+(p.mesc||'')+'\n';
+  });
+  dl(csv,'fusion_nettoyee_'+today()+'.csv');
+  toast('📤 CSV nettoyé exporté — '+a.length+' adresses');
+}
+
+function nettoyerDoublons(){
+  var avant=points.length;
+  var vus={};
+  points=points.filter(function(p){
+    // Clé = lat+lon arrondi à 3 décimales
+    var cle=(p.lat||0).toFixed(3)+'_'+(p.lon||0).toFixed(3);
+    if(vus[cle]){
+      // Garder le mieux scoré
+      if((p.score||0)>(vus[cle].score||0)) vus[cle]=p;
+      return false;
+    }
+    vus[cle]=p;return true;
+  });
+  var apres=points.length;
+  placerMarkers();
+  fermerImport();
+  toast('🧹 '+(avant-apres)+' doublons supprimés — '+apres+' adresses');
+}
+
+// Charger liste noire au démarrage
+(function(){
+  try{
+    var ln=localStorage.getItem('fm_liste_noire');
+    if(ln)window.listeNoire=JSON.parse(ln);
+  }catch(e){window.listeNoire=[];}
+})();
+
+// ═══════════════════════════════════════════
 // EXPORT
 // ═══════════════════════════════════════════
 function exporterActifs(){
@@ -955,7 +1044,106 @@ function sauvegarderLegend(){
 // ═══════════════════════════════════════════
 // GÉOCODAGE + IMPORT DADDI / ANNIV
 // ═══════════════════════════════════════════
-function lireFichier(file){
+// ═══════════════════════════════════════════
+// IMPORT FREE / VAD — Nouvelles ouvertures par ville
+// ═══════════════════════════════════════════
+var COORDS_VILLES = {
+  'valence':[44.933,4.892],'romans sur isere':[45.046,5.052],'montelimar':[44.558,4.752],
+  'grenoble':[45.188,5.724],'vienne':[45.523,4.874],'bourgoin':[45.585,5.291],
+  'annecy':[45.899,6.129],'chambery':[45.564,5.919],'albertville':[45.675,6.392],
+  'roanne':[46.034,4.069],'aubenas':[44.623,4.392],'privas':[44.735,4.599],
+  'tournon':[45.067,4.832],'nyons':[44.359,5.140],'crest':[44.728,5.023],
+  'la tour du pin':[45.564,5.441],'voiron':[45.363,5.590],'annonay':[45.241,4.669],
+  'bourg en bresse':[46.205,5.225],'aix les bains':[45.688,5.912],
+  'albon':[45.267,4.807],'alixan':[44.978,4.986],'andancette':[45.257,4.779],
+  'anneyron':[45.277,4.835],'barbieres':[44.897,5.094],'barcelonne':[44.937,5.191],
+  'baume cornillane':[44.797,4.994],'beaumont monteux':[44.874,4.916],
+  'beausemblant':[45.239,4.795],'morestel':[45.680,5.468],
+};
+
+function normaliserVille(v){
+  return v.toLowerCase()
+    .replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a').replace(/[ùûü]/g,'u')
+    .replace(/[ôö]/g,'o').replace(/[îï]/g,'i').replace(/[ç]/g,'c')
+    .replace(/['"]/g,'').trim();
+}
+
+var vadVilles = []; // stocke les villes VAD augmentation
+
+async function importerVAD(event){
+  var file=event.target.files[0];if(!file)return;
+  fermerImport();
+  var r=new FileReader();
+  r.onload=async function(e){
+    var lines=e.target.result.split('\n').filter(function(l){return l.trim();});
+    var sep=lines[0].includes(';')?';':',';
+    var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+    var fv=h.findIndex(function(v){return v.includes('ville');}),
+        fs=h.findIndex(function(v){return v.includes('statut');}),
+        fd=h.findIndex(function(v){return v.includes('diff');}),
+        fn=h.findIndex(function(v){return v.includes('logements actuel');});
+
+    layerFree.clearLayers();
+    vadVilles=[];
+    var added=0,geocoded=0;
+
+    for(var i=1;i<lines.length;i++){
+      var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+      var statut=fs>=0?c[fs]:'';
+      if(!statut.toUpperCase().includes('AUGMENTATION'))continue;
+
+      var ville=fv>=0?c[fv]:'';
+      var diff=fd>=0?parseInt(c[fd].replace('+',''))||0:0;
+      var nb=fn>=0?parseInt(c[fn])||0:0;
+      if(!ville)continue;
+
+      added++;
+      var vn=normaliserVille(ville);
+      var coord=null;
+
+      // Chercher dans la base locale d'abord
+      Object.keys(COORDS_VILLES).forEach(function(k){
+        if(!coord&&(k===vn||vn.includes(k)||k.includes(vn)))coord=COORDS_VILLES[k];
+      });
+
+      // Si pas trouvé, géocoder via BAN
+      if(!coord){
+        try{
+          var q=encodeURIComponent(ville+' France');
+          var resp=await fetch('https://api-adresse.data.gouv.fr/search/?q='+q+'&type=municipality&limit=1');
+          var d=await resp.json();
+          if(d.features&&d.features.length>0){
+            var coords2=d.features[0].geometry.coordinates;
+            coord=[coords2[1],coords2[0]];
+            COORDS_VILLES[vn]=coord; // Cacher pour la prochaine fois
+            geocoded++;
+          }
+          await new Promise(function(r){setTimeout(r,60);});
+        }catch(ex){}
+      }
+
+      if(!coord)continue;
+
+      // Rayon proportionnel à la différence
+      var rayon=Math.max(6,Math.min(25,Math.sqrt(diff)*1.5));
+      var col='#cc44ff';
+
+      L.circleMarker(coord,{
+        radius:rayon,fillColor:col,color:'rgba(0,0,0,0.4)',
+        weight:2,opacity:0.8,fillOpacity:0.25
+      }).bindTooltip(
+        '<b style="color:'+col+'">🟣 FREE — '+ville+'</b><br>+'+diff+' logements · Total: '+nb,
+        {direction:'top'}
+      ).addTo(layerFree);
+
+      vadVilles.push({ville:ville,diff:diff,nb:nb,coord:coord});
+    }
+
+    majChips();
+    toast('🟣 FREE VAD: '+added+' villes en hausse ('+geocoded+' géocodées)');
+  };
+  r.readAsText(file,'utf-8');
+}
   return new Promise(function(res){var r=new FileReader();r.onload=function(e){res(e.target.result);};r.readAsText(file,'utf-8');});
 }
 async function geocoderAdresse(adresse,commune,cp){
@@ -983,21 +1171,37 @@ async function importerDADDI(event){
     locaux:h.findIndex(function(v){return v.includes('nombrelogement');}),
     mesc:h.findIndex(function(v){return v.includes('mescdate')||v==='mescdate';}),
     dept:h.findIndex(function(v){return v==='dept';}),
+    prio:h.findIndex(function(v){return v.includes('priorite');}),
+    scoring:h.findIndex(function(v){return v==='scoring';}),
+    distKm:h.findIndex(function(v){return v.includes('distancekm');}),
+    arret:h.findIndex(function(v){return v.includes('arretcuivre');}),
   };
   var added=0,errors=0,limit=Math.min(lines.length,201);
   for(var i=1;i<limit;i++){
     var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
     var num=fi.numero>=0?c[fi.numero]:'',compl=fi.compl>=0?c[fi.compl]:'';
+    // Nettoyer les valeurs ambiguës
+    if(['ambigu','null','undefined','0'].includes(num.toLowerCase()))num='';
+    if(['ambigu','null','undefined'].includes(compl.toLowerCase()))compl='';
     var voie=fi.voie>=0?c[fi.voie]:'',cp=fi.cp>=0?c[fi.cp]:'',com=fi.commune>=0?c[fi.commune]:'';
     var nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
     var mesc=fi.mesc>=0?c[fi.mesc]:'',dept=fi.dept>=0?c[fi.dept]:(cp?cp.substring(0,2):'');
+    var prio=fi.prio>=0?c[fi.prio]:'',scoring=fi.scoring>=0?c[fi.scoring]:'';
+    var arret=fi.arret>=0?parseInt(c[fi.arret])||0:0;
     if(!voie||!cp)continue;
     var adrStr=([num,compl].filter(Boolean).join(' ')+' '+voie).trim()+', '+cp+' '+com;
     var id=adrStr+'_daddi_'+i;
     if(points.find(function(p){return p.id===id;}))continue;
     var coords=await geocoderAdresse([num,compl,voie].filter(Boolean).join(' '),com,cp);
     if(!coords){errors++;continue;}
-    points.push({id:id,adresse:adrStr,commune:com,dept:dept,locaux:nb,lat:coords.lat,lon:coords.lon,couleur:'blue',score:0,ptype:'daddi',jours_anniv:0,mesc:mesc,note:'',action:''});
+    points.push({
+      id:id,adresse:adrStr,commune:com,dept:dept,locaux:nb,
+      lat:coords.lat,lon:coords.lon,
+      couleur:prio.includes('MAXIMALE')?'red':prio.includes('HAUTE')?'orange':'blue',
+      score:0,ptype:'daddi',jours_anniv:0,mesc:mesc,
+      source:'daddi',prio:prio,scoring:scoring,arretCuivre:arret,
+      note:'',action:''
+    });
     added++;
     if(added%10===0)toast('⏳ DADDI: '+added+'...');
     await new Promise(function(r){setTimeout(r,80);});
