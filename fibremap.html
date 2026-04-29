@@ -20,23 +20,8 @@ button, .chip, .bb-btn, .sbtn {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
-<script>
-// Charger Leaflet dynamiquement — ne bloque pas si échec
-function loadScript(src, cb){
-  var s=document.createElement('script');
-  s.src=src;
-  s.onload=cb||function(){};
-  s.onerror=function(){console.warn('Erreur chargement:',src);if(cb)cb();};
-  document.head.appendChild(s);
-}
-window._leafletReady=false;
-loadScript('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js', function(){
-  loadScript('https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js', function(){
-    window._leafletReady=true;
-    if(window._initMapWaiting) window._initMapWaiting();
-  });
-});
-</script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
 :root{--bg:#09090f;--surface:#111118;--surface2:#16161f;--border:#1f1f2e;--border2:#2a2a3e;--orange:#ff8c00;--red:#ff3355;--green:#00d46a;--blue:#00c8ff;--gold:#ffd700;--purple:#b06cff;--pink:#ff6eb4;--text:#eeeeff;--muted:#5555aa;}
@@ -397,7 +382,6 @@ document.addEventListener('DOMContentLoaded', function(){
   // Attendre que Leaflet soit chargé dynamiquement
   function initMap(){
     if(!window.L){setTimeout(initMap,100);return;}
-    map = L.map('map', {
     zoomControl:false,
     attributionControl:false,
     tap:true,
