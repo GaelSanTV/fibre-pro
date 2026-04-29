@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<style>
+/* iOS Safari fixes */
+* { -webkit-tap-highlight-color: transparent; }
+body { -webkit-touch-callout: none; }
+button, .chip, .bb-btn, .sbtn { 
+  cursor: pointer;
+  -webkit-appearance: none;
+  touch-action: manipulation;
+}
+</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FibreMap">
+<meta name="theme-color" content="#09090f">
+<title>FibreMap v3</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+:root{--bg:#09090f;--surface:#111118;--surface2:#16161f;--border:#1f1f2e;--border2:#2a2a3e;--orange:#ff8c00;--red:#ff3355;--green:#00d46a;--blue:#00c8ff;--gold:#ffd700;--purple:#b06cff;--pink:#ff6eb4;--text:#eeeeff;--muted:#5555aa;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(9,9,15,0.98);border-bottom:1px solid var(--border);z-index:10000;flex-shrink:0;position:relative;}
+.logo{font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;color:var(--blue);white-space:nowrap;}
+.logo span{color:var(--text);}
+.hdr-chips{display:flex;gap:4px;flex:1;overflow-x:auto;padding:2px 0;-webkit-overflow-scrolling:touch;}
+.chip{display:flex;align-items:center;gap:4px;padding:6px 10px;min-height:36px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:0.62rem;cursor:pointer;transition:all 0.15s;flex-shrink:0;white-space:nowrap;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.chip:active{opacity:0.7;}
+.chip.on{border-color:var(--blue);}
+.chip-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.chip-val{font-family:'Space Mono',monospace;font-weight:700;}
+.chip-lbl{color:var(--muted);}
+.hdr-btns{display:flex;gap:5px;flex-shrink:0;}
+.hbtn{padding:5px 9px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Syne',sans-serif;font-size:0.68rem;cursor:pointer;white-space:nowrap;user-select:none;}
+.hbtn.primary{background:var(--blue);color:#000;border-color:var(--blue);font-weight:700;}
+input[type=file]{display:none;}
+
+/* MAP — occupe tout l'espace restant */
+#map{flex:1;z-index:1;position:relative;-webkit-tap-highlight-color:transparent;}
+.leaflet-tile-pane{filter:brightness(0.5) saturate(0.25) hue-rotate(215deg);}
+.leaflet-control-zoom{border:1px solid var(--border2)!important;background:var(--surface)!important;}
+.leaflet-control-zoom a{background:var(--surface)!important;color:var(--text)!important;border-bottom:1px solid var(--border2)!important;line-height:26px!important;}
+.marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(0,200,255,0.15)!important;}
+.marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:rgba(0,200,255,0.35)!important;color:var(--text)!important;font-family:'Space Mono',monospace!important;font-size:0.7rem!important;font-weight:700!important;}
+
+/* BOTTOM BAR */
+.bottom-bar{display:flex;align-items:center;gap:4px;padding:6px 8px;background:rgba(9,9,15,0.98);border-top:1px solid var(--border);z-index:10000;flex-shrink:0;flex-wrap:wrap;overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;}
+.bb-count{font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--muted);flex:1;min-width:80px;}
+.bb-btns{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.bb-btn{padding:8px 12px;min-height:38px;min-width:44px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Syne',sans-serif;font-size:0.7rem;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;white-space:nowrap;}
+.bb-btn:active{opacity:0.7;transform:scale(0.96);}
+.bb-btn.active{background:rgba(0,200,255,0.15)!important;color:var(--blue)!important;border-color:rgba(0,200,255,0.5)!important;}
+.bb-btn.gold{color:var(--gold);border-color:rgba(255,215,0,0.3);}
+
+/* OVERLAYS — pointer-events:none sur conteneur, auto sur enfants */
+.map-overlay{position:absolute;z-index:500;pointer-events:none;}
+.map-overlay *{pointer-events:auto;}
+
+/* SEARCH */
+.search-wrap{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:380px;z-index:500;pointer-events:none;}
+.search-wrap *{pointer-events:auto;}
+.search-input{width:100%;padding:9px 32px 9px 34px;background:rgba(9,9,15,0.96);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.82rem;outline:none;}
+.search-input:focus{border-color:var(--blue);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:0.85rem;pointer-events:none;}
+.search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:0.85rem;cursor:pointer;}
+.search-results{background:rgba(9,9,15,0.98);border:1px solid var(--border2);border-radius:10px;margin-top:4px;overflow:hidden;max-height:160px;overflow-y:auto;display:none;}
+.sr-item{padding:8px 12px;cursor:pointer;font-size:0.76rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.sr-item:active{background:var(--surface);}
+
+/* SCORE FILTER */
+.score-wrap{position:absolute;top:56px;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:380px;z-index:499;pointer-events:none;display:none;}
+.score-wrap *{pointer-events:auto;}
+.score-inner{background:rgba(9,9,15,0.94);border:1px solid var(--border2);border-radius:10px;padding:8px 12px;display:flex;align-items:center;gap:10px;}
+.score-inner label{font-size:0.65rem;color:var(--muted);font-family:'Space Mono',monospace;white-space:nowrap;}
+.score-inner input[type=range]{flex:1;accent-color:var(--blue);}
+.score-val{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--blue);min-width:30px;text-align:right;}
+
+/* LIVE COUNTER */
+.live-ctr{position:absolute;top:10px;right:10px;z-index:500;background:rgba(9,9,15,0.95);border:1px solid rgba(0,212,106,0.3);border-radius:10px;padding:8px 10px;text-align:center;cursor:pointer;display:none;pointer-events:auto;}
+.lc-v{font-family:'Space Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--green);line-height:1;}
+.lc-l{font-size:0.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:2px;}
+.lc-t{font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--gold);margin-top:2px;}
+
+/* LEGEND */
+.legend-wrap{position:absolute;bottom:10px;right:10px;z-index:500;background:rgba(9,9,15,0.92);border:1px solid var(--border);border-radius:8px;padding:8px 10px;pointer-events:auto;max-width:130px;}
+.leg-r{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:0.58rem;color:var(--muted);}
+.leg-r:last-child{margin-bottom:0;}
+.leg-d{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.leg-sep{width:100%;height:1px;background:var(--border);margin:4px 0;}
+
+/* ACTION SHEET */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:2000;display:none;}
+.overlay.on{display:block;}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:14px 14px 28px;z-index:2001;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);max-height:88vh;overflow-y:auto;}
+.sheet.on{transform:translateY(0);}
+.sh-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 12px;}
+.sh-type{display:flex;align-items:center;gap:7px;margin-bottom:3px;}
+.sh-tdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.sh-tlbl{font-family:'Space Mono',monospace;font-size:0.62rem;color:var(--muted);}
+.sh-addr{font-size:0.9rem;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sh-sub{font-size:0.65rem;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:10px;}
+.histo-box{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:10px;}
+.histo-ttl{font-size:0.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;font-family:'Space Mono',monospace;}
+.histo-row{font-size:0.7rem;display:flex;gap:8px;margin-bottom:3px;}
+.histo-d{font-family:'Space Mono',monospace;color:var(--muted);font-size:0.62rem;min-width:65px;}
+.sh-note{width:100%;padding:9px 11px;background:rgba(255,255,255,0.04);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'Syne',sans-serif;font-size:0.8rem;outline:none;resize:none;margin-bottom:8px;}
+.sh-note:focus{border-color:var(--gold);}
+.ntags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.ntag{padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.65rem;cursor:pointer;font-family:'Syne',sans-serif;}
+.sh-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.sbtn{padding:14px 8px;min-height:48px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text);font-family:'Syne',sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;text-align:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.sbtn:active{opacity:0.7;transform:scale(0.97);}
+.sbtn:active{opacity:0.8;}
+.sbtn.sign{border-color:rgba(0,212,106,0.5);color:var(--green);background:rgba(0,212,106,0.08);}
+.sbtn.done{border-color:rgba(0,212,106,0.4);color:var(--green);}
+.sbtn.vide{border-color:rgba(255,214,0,0.3);color:var(--gold);}
+.sbtn.concur{border-color:rgba(255,51,85,0.4);color:var(--red);}
+.sbtn.revoir{border-color:rgba(0,200,255,0.3);color:var(--blue);}
+.sbtn.bad{border-color:rgba(85,85,170,0.4);color:var(--muted);}
+.sbtn.full{grid-column:span 2;border-color:rgba(255,214,0,0.4);color:var(--gold);}
+.sbtn.maps{grid-column:span 2;border-color:rgba(0,200,255,0.3);color:var(--blue);}
+.sbtn.route{grid-column:span 2;border-color:rgba(0,212,106,0.3);color:var(--green);background:rgba(0,212,106,0.06);}
+.sh-cancel{width:100%;padding:11px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.82rem;cursor:pointer;margin-top:4px;}
+
+/* IMPORT MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:3000;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.on{display:flex;}
+.modal-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:20px;width:100%;max-width:380px;max-height:90vh;overflow-y:auto;}
+.modal-title{font-size:0.95rem;font-weight:700;margin-bottom:14px;color:var(--blue);}
+.iz{border:2px dashed var(--border2);border-radius:10px;padding:16px;text-align:center;cursor:pointer;margin-bottom:8px;transition:border-color 0.2s;}
+.iz:active{border-color:var(--blue);}
+.iz-ic{font-size:1.3rem;margin-bottom:4px;}
+.iz-t{font-weight:600;font-size:0.82rem;margin-bottom:2px;}
+.iz-s{font-size:0.65rem;color:var(--muted);}
+.modal-close{width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Syne',sans-serif;cursor:pointer;margin-top:8px;font-size:0.82rem;}
+
+/* ITINERAIRE */
+.iti-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;display:none;flex-direction:column;padding:20px;gap:12px;}
+.iti-modal.on{display:flex;}
+.iti-card{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:18px;flex:1;overflow-y:auto;}
+.iti-title{font-size:0.95rem;font-weight:700;color:var(--green);margin-bottom:12px;}
+.iti-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.iti-item:last-child{border-bottom:none;}
+.iti-n{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--muted);min-width:20px;}
+.iti-btns{display:flex;gap:8px;}
+.iti-btn{flex:1;padding:12px;border-radius:10px;border:none;font-family:'Syne',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;}
+.iti-go{background:var(--green);color:#000;}
+.iti-cl{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+
+/* TOAST */
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-10px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:7px 14px;border-radius:8px;font-size:0.75rem;z-index:9999;opacity:0;transition:all 0.25s;white-space:nowrap;pointer-events:none;}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0);}
+
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.leaflet-tooltip{background:rgba(9,9,15,0.95)!important;border:1px solid var(--border2)!important;color:var(--text)!important;font-family:'Syne',sans-serif!important;font-size:0.7rem!important;padding:6px 10px!important;border-radius:6px!important;box-shadow:0 4px 16px rgba(0,0,0,0.5)!important;pointer-events:none!important;}
+.fm-tooltip{background:rgba(9,9,15,0.97)!important;border:1px solid rgba(255,255,255,0.15)!important;color:var(--text)!important;font-family:'Syne',sans-serif!important;font-size:0.72rem!important;padding:8px 12px!important;border-radius:8px!important;box-shadow:0 4px 20px rgba(0,0,0,0.6)!important;line-height:1.5!important;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="logo">Fibre<span>Map</span></div>
+  <div class="hdr-chips" id="chips"></div>
+  <div class="hdr-btns">
+    <button class="hbtn" onclick="toggleScoreBar()">⭐</button>
+    <button class="hbtn" onclick="ouvrirImport()">＋</button>
+    <button class="hbtn primary" onclick="ouvrirItineraire()">🗺</button>
+  </div>
+</div>
+
+<!-- MAP CONTAINER -->
+<div id="map">
+  <!-- OVERLAYS INSIDE MAP — ne bloquent pas les clics sur la carte -->
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="searchInput" placeholder="Rechercher adresse, commune..." oninput="rechercher(this.value)" autocomplete="off">
+    <button class="search-clear" onclick="viderRecherche()">✕</button>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
+  <div class="score-wrap" id="scoreWrap">
+    <div class="score-inner">
+      <label>Score min</label>
+      <input type="range" id="scoreSlider" min="0" max="100" value="0" oninput="filtrerScore(this.value)">
+      <span class="score-val" id="scoreVal">0</span>
+    </div>
+    <div class="score-inner" style="margin-top:4px">
+      <label>Logements min</label>
+      <input type="range" id="locauxSlider" min="0" max="100" step="5" value="0" oninput="filtrerLocaux(this.value)">
+      <span class="score-val" id="locauxVal">0</span>
+    </div>
+  </div>
+
+  <div class="live-ctr" id="liveCtr" onclick="resetCompteur()">
+    <div class="lc-v" id="lcC">0</div>
+    <div class="lc-l">Contrats</div>
+    <div class="lc-t" id="lcT">0%</div>
+    <div class="lc-l">Conv.</div>
+  </div>
+
+  <div class="legend-wrap" id="legendWrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+      <span style="font-size:0.55rem;color:var(--muted);font-family:Space Mono,monospace;text-transform:uppercase;letter-spacing:0.08em">Légende</span>
+      <button onclick="toggleEditLegend()" style="background:none;border:none;color:var(--muted);font-size:0.65rem;cursor:pointer;padding:0 2px">✏️</button>
+    </div>
+    <div id="legendItems">
+      <div class="leg-r"><div class="leg-d" style="background:var(--gold)"></div><span>⭐ Orange+SFR</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:var(--orange)"></div><span>🟠 Orange</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:var(--purple)"></div><span>🔴 SFR</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:var(--pink)"></div><span>🎂 Anniversaire</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:var(--blue)"></div><span>🔵 DADDI</span></div>
+      <div class="leg-sep"></div>
+      <div class="leg-r"><div class="leg-d" style="background:#00ff88;box-shadow:0 0 4px #00ff88"></div><span>🆕 Importé aujourd'hui</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#ffaa00"></div><span>📅 2-7 jours</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#888"></div><span>📦 +7 jours</span></div>
+      <div class="leg-sep"></div>
+      <div class="leg-r"><div class="leg-d" style="background:#ff2d55;opacity:0.6"></div><span>🔥 Visité &lt;30j</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#ff9f0a;opacity:0.6"></div><span>🟠 30-90j</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#30d158;opacity:0.6"></div><span>🟢 90-180j</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#0a84ff;opacity:0.6"></div><span>🔵 &gt;180j</span></div>
+    </div>
+    <!-- MODE EDIT -->
+    <div id="legendEdit" style="display:none;margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+      <div style="font-size:0.6rem;color:var(--muted);margin-bottom:6px">Modifier les libellés :</div>
+      <div id="legendEditItems"></div>
+      <button onclick="sauvegarderLegend()" style="width:100%;margin-top:6px;padding:5px;background:var(--blue);border:none;border-radius:4px;color:#000;font-size:0.65rem;font-weight:700;cursor:pointer">💾 Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <div class="bb-count" id="bbCount">Importez vos fichiers CSV</div>
+  <div class="bb-btns">
+    <button class="bb-btn" onclick="toggleLegend()">🗺</button>
+    <button class="bb-btn" onclick="toggleCluster()">🔵</button>
+    <button class="bb-btn date-btn active" data-val="0" onclick="setDateFiltre(0)" title="Toutes dates">📅 TOUT</button>
+    <button class="bb-btn date-btn" data-val="1" onclick="setDateFiltre(1)" title="Importés aujourd'hui" style="color:#00ff88">🆕 JOUR</button>
+    <button class="bb-btn date-btn" data-val="7" onclick="setDateFiltre(7)" title="7 derniers jours" style="color:#ffaa00">📅 7J</button>
+    <button class="bb-btn date-btn" data-val="30" onclick="setDateFiltre(30)" title="30 derniers jours" style="color:#ff8800">📅 30J</button>
+    <button class="bb-btn blue" onclick="exporterActifs()">📤 Actifs</button>
+    <button class="bb-btn gold" onclick="exporterTraites()">📋 Traités</button>
+    <button class="bb-btn" onclick="exporterCSVComplet()" style="color:#ff3355;border-color:rgba(255,34,68,0.3)">🗑️ CSV nettoyé</button>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-bg" id="importModal">
+  <div class="modal-card">
+    <div class="modal-title">📂 Importer</div>
+    <div class="iz" onclick="document.getElementById('fOrange').click()"><div class="iz-ic">🟠</div><div class="iz-t">Orange / Fusion</div><div class="iz-s">fusion_orange_sfr.csv</div></div>
+    <input type="file" id="fOrange" accept=".csv" onchange="importerFichier(event,'orange')">
+    <div class="iz" onclick="document.getElementById('fSFR').click()"><div class="iz-ic">🔴</div><div class="iz-t">SFR confirmés</div><div class="iz-s">sfr_eligibles_confirmes.csv</div></div>
+    <input type="file" id="fSFR" accept=".csv" onchange="importerFichier(event,'sfr')">
+    <div class="iz" onclick="document.getElementById('fAnniv').click()"><div class="iz-ic">🎂</div><div class="iz-t">Anniversaires</div><div class="iz-s">anniversaires_fibre.csv</div></div>
+    <input type="file" id="fAnniv" accept=".csv" onchange="importerFichier(event,'anniv')">
+    <div class="iz" onclick="document.getElementById('fChaleur').click()"><div class="iz-ic">🔥</div><div class="iz-t">Historique prospection</div><div class="iz-s">villes_dates.csv</div></div>
+    <input type="file" id="fChaleur" accept=".csv" onchange="importerChaleur(event)">
+    <div class="iz" onclick="document.getElementById('fDADDI').click()"><div class="iz-ic">🔵</div><div class="iz-t">DADDI AuRA Export</div><div class="iz-s">DADDI_AuRA_XXXX-XX-XX.csv — géocodage auto</div></div>
+    <input type="file" id="fDADDI" accept=".csv" onchange="importerDADDI(event)">
+    <div class="iz" onclick="document.getElementById('fAnnivD').click()"><div class="iz-ic">🎂</div><div class="iz-t">DADDI Anniversaires</div><div class="iz-s">DADDI_Anniversaires_XXXX.csv — géocodage auto</div></div>
+    <input type="file" id="fAnnivD" accept=".csv" onchange="importerAnnivDADDI(event)">
+    <div class="iz" onclick="document.getElementById('fFree').click()"><div class="iz-ic">🟣</div><div class="iz-t">Free / VAD — Nouvelles ouvertures</div><div class="iz-s">recherche_vad_VILLES_XXXX.csv — villes avec augmentation</div></div>
+    <input type="file" id="fFree" accept=".csv" onchange="importerVAD(event)">
+    <div class="iz" onclick="nettoyerDoublons()" style="border-color:rgba(255,170,0,0.3)"><div class="iz-ic">🧹</div><div class="iz-t">Nettoyer les doublons</div><div class="iz-s">Fusionne les adresses identiques</div></div>
+    <button class="modal-close" onclick="fermerImport()">✕ Fermer</button>
+  </div>
+</div>
+
+<!-- ACTION SHEET -->
+<div class="overlay" id="overlay" onclick="fermerSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-type"><div class="sh-tdot" id="shDot"></div><div class="sh-tlbl" id="shType"></div></div>
+  <div class="sh-addr" id="shAddr">—</div>
+  <div class="sh-sub" id="shSub">—</div>
+  <div class="histo-box" id="histoBox" style="display:none">
+    <div class="histo-ttl">📋 Historique</div>
+    <div id="histoList"></div>
+  </div>
+  <textarea class="sh-note" id="shNote" rows="2" placeholder="📝 Note terrain..."></textarea>
+  <div class="ntags">
+    <button class="ntag" onclick="addTag('Absent')">👤 Absent</button>
+    <button class="ntag" onclick="addTag('Fan SFR')">📵 Fan SFR</button>
+    <button class="ntag" onclick="addTag('Fan Free')">📵 Fan Free</button>
+    <button class="ntag" onclick="addTag('Trop cher')">💰 Cher</button>
+    <button class="ntag" onclick="addTag('Engagé')">🔒 Engagé</button>
+    <button class="ntag" onclick="addTag('Gardien matin')">🏠 Gardien</button>
+    <button class="ntag" onclick="addTag('À repasser')">🔄 Repasser</button>
+  </div>
+  <div class="sh-grid">
+    <button class="sbtn sign" onclick="doAction('signé')">🎉 Contrat !</button>
+    <button class="sbtn done" onclick="doAction('done')">✅ Prospecté</button>
+    <button class="sbtn vide" onclick="doAction('vide')">🏚️ Vide</button>
+    <button class="sbtn concur" onclick="doAction('concurrent')">🔴 Concurrent</button>
+    <button class="sbtn revoir" onclick="doAction('revoir')">🔄 À revoir</button>
+    <button class="sbtn bad" onclick="doAction('bad')">❌ Mauvaise</button>
+    <button class="sbtn full" onclick="doAction('verifier')">🔍 À vérifier Orange/SFR</button>
+    <button class="sbtn maps" onclick="ouvMaps()">📍 Ouvrir dans Maps</button>
+    <button class="sbtn route" onclick="ajouterIti()">🗺️ Ajouter à l'itinéraire</button>
+    <button class="sbtn" onclick="supprimerDefinitif()" style="grid-column:span 2;border-color:rgba(255,34,68,0.5);color:#ff2244;background:rgba(255,34,68,0.05)">🗑️ SUPPRIMER DÉFINITIVEMENT</button>
+  </div>
+  <button class="sh-cancel" onclick="fermerSheet()">Annuler</button>
+</div>
+
+<!-- ITINERAIRE -->
+<div class="iti-modal" id="itiModal">
+  <div class="iti-card">
+    <div class="iti-title">🗺️ Itinéraire (<span id="itiCount">0</span>)</div>
+    <div id="itiList"></div>
+  </div>
+  <div class="iti-btns">
+    <button class="iti-btn iti-go" onclick="lancerIti()">🚗 Lancer Maps</button>
+    <button class="iti-btn iti-cl" onclick="viderIti()">🗑️ Vider</button>
+    <button class="iti-btn iti-cl" onclick="fermerIti()">✕</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE — global pour être accessible partout
+// ═══════════════════════════════════════════
+var points = [], traites = [], chaleurVilles = [], itineraire = [];
+var vistesVilles = {}; // commune → {nb, minJ}
+var histoImmeuble = {};
+var scoreMin = 0, locauxMin = 0, clusterOn = true;
+var contrats = 0, portes = 0;
+var selectedPoint = null;
+
+// Layers — initialisés après load
+var map, layerOrange, layerSFR, layerBoth, layerAnniv, layerChaleur, layerDADDI, layerFree;
+var layersOn = {orange:true,sfr:true,both:true,anniv:true,chaleur:true,daddi:true,free:true};
+var dateImportFiltre = 0; // 0=tous, 1=aujourd'hui, 7=7 jours, 30=30 jours
+
+// ═══════════════════════════════════════════
+// INIT MAP
+// ═══════════════════════════════════════════
+// ── iOS TOUCH FIX ──────────────────────────────────────────
+// Force tous les boutons à répondre aux touches iOS
+document.addEventListener('touchstart', function(){}, {passive:true});
+
+document.addEventListener('DOMContentLoaded', function(){
+  map = L.map('map', {zoomControl:false, attributionControl:false}).setView([45.1, 5.7], 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+
+  function makeClusterOpts(col, shadow){
+    return {
+      maxClusterRadius: 50,
+      iconCreateFunction: function(c){
+        var n = c.getChildCount();
+        var sz = n<10?32:n<50?38:46;
+        return L.divIcon({
+          html:'<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+col+'33;border:3px solid '+col+';display:flex;align-items:center;justify-content:center;font-family:Space Mono,monospace;font-size:'+(n<100?'0.75':'0.62')+'rem;font-weight:700;color:'+col+';box-shadow:0 0 12px '+col+'55;text-shadow:0 0 4px '+col+'">'+n+'</div>',
+          className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2]
+        });
+      }
+    };
+  }
+
+  layerOrange  = L.markerClusterGroup(makeClusterOpts('#ff8c00','#ff8c00'));
+  layerSFR     = L.markerClusterGroup(makeClusterOpts('#b06cff','#b06cff'));
+  layerBoth    = L.markerClusterGroup(makeClusterOpts('#ffd700','#ffd700'));
+  layerAnniv   = L.markerClusterGroup(makeClusterOpts('#ff6eb4','#ff6eb4'));
+  layerDADDI   = L.markerClusterGroup(makeClusterOpts('#00c8ff','#00c8ff'));
+  layerFree    = L.layerGroup(); // Cercles chaleur VAD
+  layerChaleur = L.layerGroup();
+
+  [layerOrange,layerSFR,layerBoth,layerAnniv,layerDADDI,layerFree,layerChaleur].forEach(function(l){map.addLayer(l);});
+
+  map.on('click', function(){
+    document.getElementById('searchResults').style.display = 'none';
+  });
+});
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function getColor(p){
+  if(p.ptype==='both')  return '#ffd700';
+  if(p.ptype==='sfr')   return '#b06cff';
+  if(p.ptype==='daddi') return '#00c8ff';
+  if(p.ptype==='free')  return '#cc44ff';
+  if(p.ptype==='anniv') return p.jours_anniv<=7?'#ff2d55':p.jours_anniv<=20?'#ff9f0a':'#30d158';
+  var c=p.couleur;
+  if(c==='red')    return '#ff3355';
+  if(c==='orange') return '#ff8c00';
+  if(c==='blue')   return '#00c8ff';
+  return '#00d46a';
+}
+function getSize(p){
+  if(p.ptype==='both') return 22;
+  if(p.locaux>=30) return 22;
+  if(p.locaux>=10) return 18;
+  return 14;
+}
+function getLayer(p){
+  if(p.ptype==='both')  return layerBoth;
+  if(p.ptype==='sfr')   return layerSFR;
+  if(p.ptype==='anniv') return layerAnniv;
+  if(p.ptype==='daddi'||p.ptype==='free') return layerDADDI;
+  return layerOrange;
+}
+// ═══════════════════════════════════════════
+// ALGO SCORING SURPUISSANT (même que NEXUS·INTEL)
+// ═══════════════════════════════════════════
+var GRANDES_VILLES_FM={'grenoble':30,'lyon':35,'avignon':28,'saint-etienne':20,'annecy':22,'chambery':18,'valence':15};
+var ZONES_SKI_FM=['chamonix','megeve','courchevel','tignes','val d\'isere','morzine','les arcs','serre chevalier','alpe d\'huez'];
+var ZONES_BLANCHES_FM=['07','26','42','43','05'];
+
+function calcScoreFM(p){
+  var s=0, lat=p.lat||44.93, lon=p.lon||4.89;
+  var dist=p.dist||hav(44.9334,4.8924,lat,lon);
+  var com=(p.commune||'').toLowerCase();
+  var adr=(p.adresse||'').toLowerCase();
+  var h=new Date().getHours(), jour=new Date().getDay();
+
+  // Base ARCEP
+  s += Math.min(40,(p.score||0)*0.4);
+  // Locaux
+  var loc=p.locaux||0;
+  s += loc>=100?20:loc>=50?17:loc>=30?14:loc>=20?11:loc>=10?8:loc>=6?4:1;
+  // Double op
+  if(p.ptype==='both') s+=25;
+  // Anniversaire
+  if(p.ptype==='anniv'){var jda=p.jours_anniv||0;s+=jda<=7?30:jda<=14?25:jda<=21?18:12;}
+  // Couleur passe
+  var c=p.couleur;
+  if(c==='red')s+=15;else if(c==='orange')s+=10;else if(c==='blue')s+=8;else if(c==='green')s+=5;
+  // Distance
+  s+=dist<=5?12:dist<=10?10:dist<=15?8:dist<=25?6:dist<=40?3:0;
+  // Village isolé
+  var isGV=Object.keys(GRANDES_VILLES_FM).some(function(v){return com.includes(v);});
+  if(!isGV&&dist>20){s+=12;if(loc>=15)s+=6;}
+  // HLM
+  var hlmK=['hlm','opac','bailleur','social','habitat','foyer','cité','alliade','domial'];
+  if(hlmK.some(function(k){return adr.includes(k)||com.includes(k);})||loc>=50)s+=10;
+  // Zone blanche
+  if(ZONES_BLANCHES_FM.includes(p.dept||''))s+=8;
+  // Heure
+  if(h>=9&&h<=11)s+=10;else if(h>=14&&h<=17)s+=8;else if(h<8||h>20)s-=12;
+  // Jour
+  if(jour===0||jour===6)s-=15;else if(jour>=2&&jour<=4)s+=8;
+  // Grande ville malus
+  var malusGV=0;
+  Object.entries(GRANDES_VILLES_FM).forEach(function(e){if(com.includes(e[0]))malusGV=Math.max(malusGV,e[1]);});
+  s-=malusGV;
+  // Ski malus
+  if(ZONES_SKI_FM.some(function(z){return com.includes(z);}))s-=18;
+  // Historique
+  var visites=null;
+  Object.keys(vistesVilles||{}).forEach(function(v){if(v.toLowerCase()===com||com.includes(v.toLowerCase()))visites=vistesVilles[v];});
+  if(visites){
+    var j=visites.minJ;
+    s-=j<15?30:j<30?22:j<60?14:j<90?8:j<180?4:0;
+    s-=Math.min(visites.nb*3,15);
+  }
+  // MESC urgence
+  if(p.mesc&&p.mesc!=='2050-01-01'&&p.mesc.length>=8){
+    try{var md=new Date(p.mesc),jr=Math.floor((md-new Date())/86400000);if(jr>=0&&jr<=90)s+=20;else if(jr<=180)s+=12;else if(jr<=365)s+=6;}catch(e){}
+  }
+  // DADDI source
+  if(p.source==='daddi')s+=5;
+  // Zone vierge
+  if(!visites&&dist>=15)s+=5;
+
+  return Math.max(0,Math.min(100,Math.round(s)));
+}
+
+// ═══════════════════════════════════════════
+// MARKERS
+// ═══════════════════════════════════════════
+function placerMarkers(){
+  if(!map) return;
+  [layerOrange,layerSFR,layerBoth,layerAnniv,layerDADDI].forEach(function(l){l.clearLayers();});
+
+  var actifs = points.filter(function(p){
+    return !['done','bad','concurrent','signé'].includes(p.action) && p.score >= scoreMin && (p.locaux||0) >= locauxMin && filtreDate(p);
+  });
+
+  // Calculer score surpuissant sur tous les points
+  actifs.forEach(function(p){
+    p._scoreFM = calcScoreFM(p);
+  });
+
+  actifs.forEach(function(p){
+    var col=getColor(p), sz=getSize(p);
+    var isBoth = p.ptype==='both';
+    var isAnniv = p.ptype==='anniv';
+    var isDaddi = p.ptype==='daddi';
+    var sf = p._scoreFM || p.score || 0;
+
+    // Marqueur avec label commune + score
+    var showLabel = p.locaux >= 15;
+    var html = '<div style="position:relative;display:flex;flex-direction:column;align-items:center;">';
+    html += '<div style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;background:'+col+';border:3px solid rgba(0,0,0,0.6);box-shadow:0 2px 8px rgba(0,0,0,0.5),0 0 '+(isBoth?'18px '+col+',0 0 30px '+col+'44':'6px '+col+'88')+';display:flex;align-items:center;justify-content:center;font-family:Space Mono,monospace;font-size:0.52rem;font-weight:700;color:rgba(0,0,0,0.85)">';
+    html += isAnniv ? '🎂' : isDaddi ? '🔵' : (p.locaux>=10 ? p.locaux : '');
+    html += '</div>';
+    if(showLabel){
+      html += '<div style="background:rgba(0,0,0,0.8);color:'+col+';font-size:0.48rem;padding:1px 4px;border-radius:3px;margin-top:1px;white-space:nowrap;font-family:Space Mono,monospace;max-width:75px;overflow:hidden;text-overflow:ellipsis">'+p.commune+' '+sf+'</div>';
+    }
+    html += '</div>';
+
+    var totalH = sz + (showLabel ? 14 : 0);
+    var icon = L.divIcon({
+      html: html,
+      className: '',
+      iconSize: [sz, totalH],
+      iconAnchor: [sz/2, sz/2]
+    });
+
+    var m = L.marker([p.lat, p.lon], {icon:icon});
+
+    var tooltipHtml =
+      '<b style="color:'+col+'">'+p.adresse.substring(0,35)+'</b><br>'+
+      '<span style="color:#aaa">'+p.commune+(p.dept?' ('+p.dept+')':'')+'</span><br>'+
+      '🏢 '+p.locaux+' log'+(p.score?' · ⭐ ARCEP '+p.score:'')+'<br>'+
+      '🧠 INTEL '+sf+'/100'+
+      (p.ptype==='anniv'?' · 🎂 J+'+p.jours_anniv:'')+
+      (p.mesc&&p.mesc!=='2050-01-01'?' · 📅 MESC '+p.mesc:'');
+
+    m.bindTooltip(tooltipHtml, {direction:'top', offset:[0,-sz/2], className:'fm-tooltip'});
+    (function(pt){ m.on('click', function(){ ouvrirSheet(pt); }); })(p);
+    getLayer(p).addLayer(m);
+  });
+
+  majPanel();
+  majChips();
+}
+
+// ═══════════════════════════════════════════
+// IMPORT
+// ═══════════════════════════════════════════
+function ouvrirImport(){ document.getElementById('importModal').classList.add('on'); }
+function fermerImport(){ document.getElementById('importModal').classList.remove('on'); }
+
+function importerFichier(event, type){
+  var file = event.target.files[0];
+  if(!file) return;
+  var r = new FileReader();
+  r.onload = function(e){
+    var lines = e.target.result.split('\n').filter(function(l){return l.trim();});
+    if(lines.length < 2){ toast('❌ Fichier invalide'); return; }
+    var sep = lines[0].includes(';') ? ';' : ',';
+    var h = lines[0].split(sep).map(function(v){return v.trim().replace(/"/g,'').toLowerCase();});
+
+    // Détection automatique du format
+    var isDaddi  = h.some(function(v){return v.includes('nomvoie')||v.includes('nom_voie')||v.includes('numerovoi');});
+    var isAnniv  = h.some(function(v){return v.includes('type_anniv')||v.includes('jours_depuis')||v.includes('mescdate');});
+
+    var fi = {
+      // Colonnes standard fusion_orange_sfr.csv
+      adresse:   h.findIndex(function(v){return v==='adresse';}),
+      commune:   h.findIndex(function(v){return v.includes('commune');}),
+      dept:      h.findIndex(function(v){return v==='dept'||v==='dpt'||v==='code_dept';}),
+      locaux:    h.findIndex(function(v){return v==='locaux'||v.includes('logloc')||v==='nb'||v==='nombrelogement'||v==='nombre_logements';}),
+      lat:       h.findIndex(function(v){return v==='lat'||v==='ban_lat'||v==='latitude';}),
+      lon:       h.findIndex(function(v){return v==='lon'||v==='ban_lon'||v==='longitude';}),
+      couleur:   h.findIndex(function(v){return v==='couleur';}),
+      score:     h.findIndex(function(v){return v==='score';}),
+      operateur: h.findIndex(function(v){return v==='operateur';}),
+      jours:     h.findIndex(function(v){return v.includes('jours_depuis_anniv');}),
+      mesc:      h.findIndex(function(v){return v.includes('mesc')||v.includes('mescdate');}),
+      // Colonnes DADDI
+      numero:    h.findIndex(function(v){return v.includes('numerovoi')||v==='numerovoi'||v==='numero_voie';}),
+      nomVoie:   h.findIndex(function(v){return v.includes('nomvoie')||v==='nom_voie'||v==='nomvoie';}),
+      cp:        h.findIndex(function(v){return v==='codepostal'||v==='code_postal'||v==='codepost';}),
+      communeD:  h.findIndex(function(v){return v==='commune';}),
+      // Colonnes AnnivFibre
+      typeAnniv: h.findIndex(function(v){return v==='type_anniv';}),
+      joursAnniv:h.findIndex(function(v){return v==='jours_depuis_anniv';}),
+    };
+
+    var added = 0;
+    for(var i=1; i<lines.length; i++){
+      var c = lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+      if(c.length < 3) continue;
+
+      var lat, lon, adr, commune, dept, nb, jda=0, ptype=type;
+
+      if(isDaddi){
+        // Format DADDI — pas de lat/lon direct, on construit l'adresse
+        var num  = fi.numero>=0  ? c[fi.numero]  : '';
+        var voie = fi.nomVoie>=0 ? c[fi.nomVoie] : '';
+        var cp   = fi.cp>=0      ? c[fi.cp]       : '';
+        var com  = fi.communeD>=0? c[fi.communeD] : '';
+        if(!voie||!cp) continue;
+        adr     = (num+' '+voie).trim()+', '+cp+' '+com;
+        commune = com;
+        dept    = cp.substring(0,2);
+        nb      = fi.locaux>=0 ? parseInt(c[fi.locaux])||0 : 0;
+        // Coordonnées — DADDI n'a pas de lat/lon → on skip ou on géocode
+        // On les met à 0 pour l'instant → point invisible mais dans la liste
+        var latD = fi.lat>=0 ? parseFloat(c[fi.lat]) : NaN;
+        var lonD = fi.lon>=0 ? parseFloat(c[fi.lon]) : NaN;
+        if(isNaN(latD)||isNaN(lonD)) continue; // Pas de coords → skip carte
+        lat = latD; lon = lonD;
+        ptype = 'orange';
+      } else if(isAnniv){
+        // Format AnnivFibre
+        adr     = fi.adresse>=0 ? c[fi.adresse] : '';
+        commune = fi.commune>=0 ? c[fi.commune] : '';
+        dept    = fi.dept>=0    ? c[fi.dept]    : '';
+        nb      = fi.locaux>=0  ? parseInt(c[fi.locaux])||0 : 0;
+        jda     = fi.joursAnniv>=0 ? parseInt(c[fi.joursAnniv])||0 : 0;
+        lat     = fi.lat>=0 ? parseFloat(c[fi.lat]) : NaN;
+        lon     = fi.lon>=0 ? parseFloat(c[fi.lon]) : NaN;
+        if(!adr||isNaN(lat)||isNaN(lon)) continue;
+        if(jda<=0||jda>30) continue;
+        ptype = 'anniv';
+      } else {
+        // Format standard fusion_orange_sfr.csv
+        lat     = fi.lat>=0  ? parseFloat(c[fi.lat])  : NaN;
+        lon     = fi.lon>=0  ? parseFloat(c[fi.lon])  : NaN;
+        adr     = fi.adresse>=0 ? c[fi.adresse] : '';
+        commune = fi.commune>=0 ? c[fi.commune] : '';
+        dept    = fi.dept>=0    ? c[fi.dept]    : '';
+        nb      = fi.locaux>=0  ? parseInt(c[fi.locaux])||0  : 0;
+        jda     = fi.jours>=0   ? parseInt(c[fi.jours])||0   : 0;
+        if(isNaN(lat)||isNaN(lon)||!adr) continue;
+        var op  = fi.operateur>=0 ? c[fi.operateur] : '';
+        if(op==='both') ptype='both';
+        else if(op==='sfr') ptype='sfr';
+        if(type==='anniv'){
+          if(jda<=0||jda>30) continue;
+          ptype='anniv';
+        }
+      }
+
+      var id = adr+'_'+lat.toFixed(4)+'_'+lon.toFixed(4);
+      if(points.find(function(p){return p.id===id;})) continue;
+
+      points.push({
+        id:id, adresse:adr, commune:commune, dept:dept, locaux:nb,
+        lat:lat, lon:lon,
+        couleur: fi.couleur>=0  ? c[fi.couleur]  : '',
+        score:   fi.score>=0    ? parseFloat(c[fi.score])||0 : 0,
+        ptype:ptype, jours_anniv:jda,
+        mesc: fi.mesc>=0 ? c[fi.mesc] : '',
+        date_import: today(),
+        note:'', action:''
+      });
+      added++;
+    }
+    placerMarkers();
+    document.getElementById('liveCtr') && (document.getElementById('liveCtr').style.display='block');
+    toast('✅ '+added+' points ajoutés ('+file.name+')');
+    fermerImport();
+  };
+  r.readAsText(file, 'utf-8');
+}
+
+// ═══════════════════════════════════════════
+// CHALEUR
+// ═══════════════════════════════════════════
+var COORDS_V = {
+  "Valence":[44.933,4.892],"Romans Sur Isère":[45.046,5.052],"Montélimar":[44.558,4.752],
+  "Grenoble":[45.188,5.724],"Vienne":[45.523,4.874],"Bourgoin":[45.585,5.291],
+  "Annecy":[45.899,6.129],"Chambery":[45.564,5.919],"Albertville":[45.675,6.392],
+  "Roanne":[46.034,4.069],"Aubenas":[44.623,4.392],"Privas":[44.735,4.599],
+  "Tournon":[45.067,4.832],"Nyons":[44.359,5.140],"Dieulefit":[44.527,5.072],
+  "La Tour Du Pin":[45.564,5.441],"Voiron":[45.363,5.590],"Morestel":[45.680,5.468],
+  "Annonay":[45.241,4.669],"Crest":[44.728,5.023],"Die":[44.751,5.371],
+  "Bourg En Bresse":[46.205,5.225],"Rumilly":[45.867,5.943],"Ugine":[45.753,6.418],
+  "Aix Les Bains":[45.688,5.912],"Charlieu":[46.160,4.174],"Belley":[45.760,5.689],
+  "Vizille":[45.079,5.774],"Allevard":[45.394,6.073],"Crolles":[45.278,5.878],
+  "L Isle D Abeau":[45.617,5.226],"Heyrieux":[45.628,5.049],"Miribel":[45.830,4.952],
+  "Trevoux":[45.943,4.769],"Avignon":[43.949,4.806],"Orange":[44.137,4.809],
+  "Livron":[44.774,4.849],"Tain L Hermitage":[45.070,4.842],"Pontchara":[45.435,5.988],
+};
+
+function importerChaleur(event){
+  var file = event.target.files[0];
+  if(!file) return;
+  var r = new FileReader();
+  r.onload = function(e){
+    var lines = e.target.result.split('\n').filter(function(l){return l.trim();});
+    var sep = lines[0].includes(';')?';':',';
+    var h = lines[0].split(sep).map(function(v){return v.trim().replace(/"/g,'').toLowerCase();});
+    var fd = h.findIndex(function(v){return v.includes('date');}), fv = h.findIndex(function(v){return v.includes('ville');});
+    if(fd<0||fv<0){ toast('❌ Colonnes date/ville manquantes'); return; }
+    var today2 = new Date();
+    chaleurVilles = [];
+    vistesVilles = {};
+    for(var i=1;i<lines.length;i++){
+      var c = lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+      var ville=c[fv]&&c[fv].trim(), ds=c[fd]&&c[fd].trim();
+      if(!ville||!ds) continue;
+      try{
+        var pt=ds.split('/');
+        var d=new Date(pt[2],pt[1]-1,pt[0]);
+        var jours=Math.floor((today2-d)/86400000);
+        if(jours>400) continue;
+        chaleurVilles.push({ville:ville,date:ds,jours:jours});
+        // Remplir vistesVilles pour le scoring
+        var vk=ville.toLowerCase();
+        if(!vistesVilles[vk])vistesVilles[vk]={nb:0,minJ:9999};
+        vistesVilles[vk].nb++;
+        if(jours<vistesVilles[vk].minJ)vistesVilles[vk].minJ=jours;
+      }catch(ex){}
+    }
+    placerChaleur();
+    majChips();
+    toast('🔥 '+new Set(chaleurVilles.map(function(v){return v.ville;})).size+' villes chargées');
+    fermerImport();
+  };
+  r.readAsText(file,'utf-8');
+}
+
+function placerChaleur(){
+  if(!layerChaleur) return;
+  layerChaleur.clearLayers();
+  var stats={};
+  chaleurVilles.forEach(function(v){
+    if(!stats[v.ville]) stats[v.ville]={nb:0,minJ:9999};
+    stats[v.ville].nb++;
+    if(v.jours<stats[v.ville].minJ) stats[v.ville].minJ=v.jours;
+  });
+  Object.keys(stats).forEach(function(ville){
+    var s=stats[ville], coord=null, vl=ville.toLowerCase();
+    Object.keys(COORDS_V).forEach(function(k){
+      if(!coord&&(k.toLowerCase()===vl||vl.includes(k.toLowerCase())||k.toLowerCase().includes(vl))) coord=COORDS_V[k];
+    });
+    if(!coord) return;
+    var j=s.minJ, col=j<30?'#ff2d55':j<90?'#ff9f0a':j<180?'#30d158':'#0a84ff';
+    L.circleMarker(coord,{radius:Math.min(8+s.nb*2,24),fillColor:col,color:'rgba(0,0,0,0.3)',weight:1,opacity:0.5,fillOpacity:0.28})
+      .bindTooltip('🔥 '+ville+' · '+s.nb+' visite'+(s.nb>1?'s':'')+' · '+j+'j',{direction:'top'})
+      .addTo(layerChaleur);
+  });
+}
+
+// ═══════════════════════════════════════════
+// CHIPS & PANEL
+// ═══════════════════════════════════════════
+function majChips(){
+  var nb=function(t){return points.filter(function(p){return p.ptype===t&&!['done','bad','concurrent','signé'].includes(p.action);}).length;};
+  var nv=new Set(chaleurVilles.map(function(v){return v.ville;})).size;
+  var nf=(vadVilles||[]).length;
+  var chips=[
+    {type:'both',   col:'#ffd700',val:nb('both'),   lbl:'Both'},
+    {type:'orange', col:'#ff8c00',val:nb('orange'),  lbl:'Orange'},
+    {type:'sfr',    col:'#b06cff',val:nb('sfr'),     lbl:'SFR'},
+    {type:'anniv',  col:'#ff6eb4',val:nb('anniv'),   lbl:'Anniv.'},
+    {type:'daddi',  col:'#00c8ff',val:nb('daddi'),   lbl:'DADDI'},
+    {type:'free',   col:'#cc44ff',val:nf,             lbl:'Free VAD'},
+    {type:'chaleur',col:'#ff5500',val:nv,             lbl:'Visites'},
+  ];
+  document.getElementById('chips').innerHTML=chips.map(function(ch){
+    return '<div class="chip '+(layersOn[ch.type]?'on':'')+'" onclick="toggleLayer(\''+ch.type+'\',this)"><div class="chip-dot" style="background:'+ch.col+'"></div><span class="chip-val" style="color:'+ch.col+'">'+ch.val+'</span><span class="chip-lbl"> '+ch.lbl+'</span></div>';
+  }).join('');
+}
+
+function toggleLayer(type, el){
+  if(!map) return;
+  layersOn[type]=!layersOn[type];
+  el.classList.toggle('on',layersOn[type]);
+  var l={orange:layerOrange,sfr:layerSFR,both:layerBoth,anniv:layerAnniv,chaleur:layerChaleur,daddi:layerDADDI,free:layerFree}[type];
+  if(l){if(layersOn[type]) map.addLayer(l); else map.removeLayer(l);}
+}
+
+function majPanel(){
+  var total=points.filter(function(p){return !['done','bad','concurrent','signé'].includes(p.action);}).length;
+  document.getElementById('bbCount').textContent=total+' actifs · '+traites.length+' traités · '+itineraire.length+' en route';
+}
+
+// ═══════════════════════════════════════════
+// SCORE FILTER
+// ═══════════════════════════════════════════
+function toggleScoreBar(){
+  var w=document.getElementById('scoreWrap');
+  w.style.display=w.style.display==='none'?'block':'none';
+}
+function filtrerScore(val){
+  scoreMin=parseInt(val);
+  document.getElementById('scoreVal').textContent=val;
+  placerMarkers();
+}
+
+function filtrerLocaux(val){
+  locauxMin=parseInt(val);
+  document.getElementById('locauxVal').textContent=val+'+';
+  placerMarkers();
+}
+
+function filtreDate(p){
+  if(dateImportFiltre===0) return true;
+  if(!p.date_import) return true;
+  var parts=p.date_import.split('-');
+  var d=new Date(parts[0],parts[1]-1,parts[2]);
+  var jours=Math.floor((new Date()-d)/86400000);
+  return jours<=dateImportFiltre;
+}
+
+function setDateFiltre(val){
+  dateImportFiltre=parseInt(val);
+  // Mettre à jour boutons
+  document.querySelectorAll('.date-btn').forEach(function(b){
+    b.classList.toggle('active', parseInt(b.dataset.val)===dateImportFiltre);
+  });
+  placerMarkers();
+  var labels={0:'TOUTES DATES',1:'AUJOURD\'HUI',7:'7 DERNIERS JOURS',30:'30 DERNIERS JOURS'};
+  toast('📅 '+labels[dateImportFiltre]);
+}
+
+// ═══════════════════════════════════════════
+// CLUSTER TOGGLE
+// ═══════════════════════════════════════════
+function toggleCluster(){
+  clusterOn=!clusterOn;
+  toast(clusterOn?'🔵 Clustering ON':'⚪ Clustering OFF');
+}
+
+// ═══════════════════════════════════════════
+// ACTION SHEET
+// ═══════════════════════════════════════════
+function ouvrirSheet(p){
+  selectedPoint=p;
+  portes++;
+  var col=getColor(p);
+  var lbl=p.ptype==='both'?'⭐ Orange+SFR':p.ptype==='sfr'?'🔴 SFR':p.ptype==='anniv'?'🎂 J+'+p.jours_anniv:'🟠 Orange';
+  document.getElementById('shDot').style.background=col;
+  document.getElementById('shType').textContent=lbl+(p.score?' · '+p.score+'pts':'');
+  document.getElementById('shAddr').textContent=p.adresse;
+  document.getElementById('shSub').textContent=(p.commune||'')+(p.dept?' ('+p.dept+')':'')+' · '+p.locaux+' log'+(p.mesc?' · MESC '+p.mesc:'');
+  document.getElementById('shNote').value=p.note||'';
+  // Historique
+  var histo=histoImmeuble[p.id]||[];
+  var hb=document.getElementById('histoBox');
+  if(histo.length){
+    hb.style.display='block';
+    document.getElementById('histoList').innerHTML=histo.slice().reverse().map(function(h){
+      return '<div class="histo-row"><span class="histo-d">'+h.date+'</span><span>'+h.action+(h.note?' · '+h.note.substring(0,20):'')+'</span></div>';
+    }).join('');
+  }else{ hb.style.display='none'; }
+  document.getElementById('sheet').classList.add('on');
+  document.getElementById('overlay').classList.add('on');
+  if(map) map.setView([p.lat,p.lon],Math.max(map.getZoom(),14));
+}
+
+function fermerSheet(){
+  if(selectedPoint) selectedPoint.note=document.getElementById('shNote').value.trim();
+  document.getElementById('sheet').classList.remove('on');
+  document.getElementById('overlay').classList.remove('on');
+  selectedPoint=null;
+}
+
+function addTag(tag){
+  var i=document.getElementById('shNote');
+  i.value=(i.value?i.value+' · ':'')+tag;
+}
+
+function doAction(type){
+  if(!selectedPoint) return;
+  var p=selectedPoint;
+  p.note=document.getElementById('shNote').value.trim();
+  p.action=type;
+  if(!histoImmeuble[p.id]) histoImmeuble[p.id]=[];
+  histoImmeuble[p.id].push({date:new Date().toLocaleDateString('fr'),action:type,note:p.note});
+  if(type==='signé'){ contrats++; majCompteur(); }
+  if(!['revoir','verifier'].includes(type)) traites.push(Object.assign({},p));
+  fermerSheet();
+  placerMarkers();
+  var labels={signé:'🎉 Contrat !',done:'✅ Prospecté',vide:'🏚️ Vide',concurrent:'🔴 Concurrent',bad:'❌ Retirée',revoir:'🔄 À revoir',verifier:'🔍 À vérifier'};
+  toast(labels[type]||'✅ OK');
+}
+
+function majCompteur(){
+  var t=portes>0?(contrats/portes*100).toFixed(1):0;
+  document.getElementById('lcC').textContent=contrats;
+  document.getElementById('lcT').textContent=t+'%';
+}
+
+function resetCompteur(){
+  if(confirm('Remettre le compteur à zéro ?')){contrats=0;portes=0;majCompteur();}
+}
+
+function ouvMaps(){
+  if(!selectedPoint) return;
+  var p=selectedPoint;
+  var isIOS=/iPhone|iPad/.test(navigator.userAgent);
+  window.open(isIOS?'comgooglemaps://?q='+p.lat+','+p.lon+'&zoom=18':'https://maps.google.com/maps?q='+p.lat+','+p.lon,'_blank');
+  fermerSheet();
+}
+
+function ajouterIti(){
+  if(!selectedPoint) return;
+  var p=selectedPoint;
+  if(!itineraire.find(function(i){return i.id===p.id;})){
+    itineraire.push(p);
+    toast('🗺️ Ajouté ('+itineraire.length+')');
+    majPanel();
+  }else{toast('Déjà dans l\'itinéraire');}
+  fermerSheet();
+}
+
+// ═══════════════════════════════════════════
+// ITINERAIRE
+// ═══════════════════════════════════════════
+function ouvrirItineraire(){
+  if(!itineraire.length){toast('Aucune adresse — cliquez un point puis "Ajouter à l\'itinéraire"');return;}
+  document.getElementById('itiCount').textContent=itineraire.length;
+  document.getElementById('itiList').innerHTML=itineraire.map(function(p,i){
+    return '<div class="iti-item"><div class="iti-n">'+(i+1)+'</div><div style="flex:1"><div style="font-size:0.78rem;font-weight:600">'+p.adresse+'</div><div style="font-size:0.62rem;color:var(--muted)">'+p.commune+' · '+p.locaux+' log</div></div><button onclick="retirerIti('+i+')" style="padding:3px 7px;border-radius:5px;border:1px solid rgba(255,51,85,0.3);background:transparent;color:var(--red);font-size:0.65rem;cursor:pointer">✕</button></div>';
+  }).join('');
+  document.getElementById('itiModal').classList.add('on');
+}
+function fermerIti(){document.getElementById('itiModal').classList.remove('on');}
+function retirerIti(i){itineraire.splice(i,1);majPanel();ouvrirItineraire();}
+function viderIti(){itineraire=[];majPanel();fermerIti();toast('🗑️ Itinéraire vidé');}
+function lancerIti(){
+  if(!itineraire.length) return;
+  var isIOS=/iPhone|iPad/.test(navigator.userAgent);
+  if(isIOS){
+    var dest=itineraire[itineraire.length-1];
+    var wps=itineraire.slice(0,-1).map(function(p){return p.lat+','+p.lon;}).join('/');
+    window.open('comgooglemaps://?daddr='+dest.lat+','+dest.lon+(wps?'&waypoints='+wps:''),'_blank');
+  }else{
+    window.open('https://www.google.com/maps/dir/'+itineraire.map(function(p){return p.lat+','+p.lon;}).join('/'),'_blank');
+  }
+  fermerIti();
+}
+
+// ═══════════════════════════════════════════
+// RECHERCHE
+// ═══════════════════════════════════════════
+function rechercher(q){
+  var res=document.getElementById('searchResults');
+  if(!q||q.length<2){res.style.display='none';return;}
+  var found=points.filter(function(p){return p.adresse.toLowerCase().includes(q.toLowerCase())||p.commune.toLowerCase().includes(q.toLowerCase());}).slice(0,8);
+  if(!found.length){res.style.display='none';return;}
+  res.style.display='block';
+  res.innerHTML=found.map(function(p){
+    return '<div class="sr-item" onclick="volerVers(\''+p.id.replace(/'/g,"\\'")+'\')">'+'<div style="width:7px;height:7px;border-radius:50%;background:'+getColor(p)+';flex-shrink:0"></div>'+'<div><div style="font-size:0.78rem;font-weight:600">'+p.adresse+'</div><div style="font-size:0.62rem;color:var(--muted)">'+p.commune+' ('+p.dept+') · '+p.locaux+' log</div></div></div>';
+  }).join('');
+}
+
+function volerVers(id){
+  var p=points.find(function(p){return p.id===id;});
+  if(!p) return;
+  document.getElementById('searchResults').style.display='none';
+  document.getElementById('searchInput').value=p.commune;
+  if(map) map.flyTo([p.lat,p.lon],16,{duration:1.5});
+  setTimeout(function(){ouvrirSheet(p);},1500);
+}
+
+function viderRecherche(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('searchResults').style.display='none';
+}
+
+// ═══════════════════════════════════════════
+// SUPPRESSION DÉFINITIVE + NETTOYAGE
+// ═══════════════════════════════════════════
+function supprimerDefinitif(){
+  if(!selectedPoint) return;
+  var p = selectedPoint;
+  if(!confirm('Supprimer définitivement "'+p.adresse+'" ?\nCette adresse sera retirée de la liste ET du prochain export CSV.')) return;
+
+  // Retirer du tableau points
+  var idx = points.findIndex(function(x){return x.id===p.id;});
+  if(idx>=0) points.splice(idx,1);
+
+  // Ajouter à la liste noire (pour éviter réimport)
+  if(!window.listeNoire) window.listeNoire=[];
+  window.listeNoire.push(p.id);
+
+  // Sauvegarder liste noire en localStorage
+  try{localStorage.setItem('fm_liste_noire',JSON.stringify(window.listeNoire));}catch(e){}
+
+  fermerSheet();
+  placerMarkers();
+  toast('🗑️ Supprimé — Export CSV mis à jour');
+}
+
+function exporterCSVComplet(){
+  // Export CSV nettoyé = actifs SANS les supprimés définitifs
+  var listeNoire = window.listeNoire||[];
+  var a = points.filter(function(p){
+    return !['done','bad','concurrent','signé'].includes(p.action)
+      && !listeNoire.includes(p.id);
+  });
+  if(!a.length){toast('Aucun point à exporter');return;}
+  var csv='adresse;commune;dept;locaux;lat;lon;score;couleur;operateur;ptype;mesc\n';
+  a.forEach(function(p){
+    var op=p.ptype==='both'?'both':p.ptype==='sfr'?'sfr':p.ptype==='free'?'free':'orange';
+    csv+=p.adresse+';'+p.commune+';'+p.dept+';'+p.locaux+';'
+      +p.lat+';'+p.lon+';'+p.score+';'+(p.couleur||'')+';'
+      +op+';'+p.ptype+';'+(p.mesc||'')+'\n';
+  });
+  dl(csv,'fusion_nettoyee_'+today()+'.csv');
+  toast('📤 CSV nettoyé exporté — '+a.length+' adresses');
+}
+
+function nettoyerDoublons(){
+  var avant=points.length;
+  var vus={};
+  points=points.filter(function(p){
+    // Clé = lat+lon arrondi à 3 décimales
+    var cle=(p.lat||0).toFixed(3)+'_'+(p.lon||0).toFixed(3);
+    if(vus[cle]){
+      // Garder le mieux scoré
+      if((p.score||0)>(vus[cle].score||0)) vus[cle]=p;
+      return false;
+    }
+    vus[cle]=p;return true;
+  });
+  var apres=points.length;
+  placerMarkers();
+  fermerImport();
+  toast('🧹 '+(avant-apres)+' doublons supprimés — '+apres+' adresses');
+}
+
+// Charger liste noire au démarrage
+(function(){
+  try{
+    var ln=localStorage.getItem('fm_liste_noire');
+    if(ln)window.listeNoire=JSON.parse(ln);
+  }catch(e){window.listeNoire=[];}
+})();
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function exporterActifs(){
+  var a=points.filter(function(p){return !['done','bad','concurrent','signé'].includes(p.action);});
+  if(!a.length){toast('Aucun point actif');return;}
+  var csv='adresse;commune;dept;locaux;lat;lon;score;ptype;note;action\n';
+  a.forEach(function(p){csv+=p.adresse+';'+p.commune+';'+p.dept+';'+p.locaux+';'+p.lat+';'+p.lon+';'+p.score+';'+p.ptype+';'+(p.note||'')+';'+(p.action||'')+'\n';});
+  dl(csv,'fibremap_actifs_'+today()+'.csv');
+  toast('📤 '+a.length+' actifs exportés');
+}
+function exporterTraites(){
+  if(!traites.length){toast('Aucun point traité');return;}
+  var csv='adresse;commune;dept;locaux;action;note;ptype\n';
+  traites.forEach(function(p){csv+=p.adresse+';'+p.commune+';'+p.dept+';'+p.locaux+';'+p.action+';'+(p.note||'')+';'+p.ptype+'\n';});
+  dl(csv,'fibremap_traites_'+today()+'.csv');
+  toast('📤 '+traites.length+' traités exportés');
+}
+function dl(csv,nom){
+  var url=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv'}));
+  Object.assign(document.createElement('a'),{href:url,download:nom}).click();
+  URL.revokeObjectURL(url);
+}
+
+function toggleLegend(){
+  var l=document.getElementById('legendWrap');
+  l.style.display=l.style.display==='none'?'block':'none';
+}
+
+// ═══════════════════════════════════════════
+// LÉGENDE ÉDITABLE
+// ═══════════════════════════════════════════
+var legendEditing = false;
+function toggleEditLegend(){
+  legendEditing=!legendEditing;
+  var el=document.getElementById('legendEdit');
+  el.style.display=legendEditing?'block':'none';
+  if(legendEditing){
+    var spans=document.querySelectorAll('#legendItems .leg-r span');
+    var html='';
+    spans.forEach(function(span,i){
+      var dot=span.previousElementSibling;
+      var col=dot?dot.style.background:'#fff';
+      html+='<div style="display:flex;align-items:center;gap:5px;margin-bottom:4px"><div style="width:9px;height:9px;border-radius:50%;background:'+col+';flex-shrink:0"></div><input data-idx="'+i+'" value="'+span.textContent+'" style="flex:1;padding:3px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-size:0.65rem;outline:none;"></div>';
+    });
+    document.getElementById('legendEditItems').innerHTML=html;
+  }
+}
+function sauvegarderLegend(){
+  var inputs=document.querySelectorAll('#legendEditItems input');
+  var spans=document.querySelectorAll('#legendItems .leg-r span');
+  inputs.forEach(function(inp,i){if(spans[i])spans[i].textContent=inp.value;});
+  legendEditing=false;
+  document.getElementById('legendEdit').style.display='none';
+  toast('✅ Légende mise à jour');
+}
+
+// ═══════════════════════════════════════════
+// GÉOCODAGE + IMPORT DADDI / ANNIV
+// ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// IMPORT FREE / VAD — Nouvelles ouvertures par ville
+// ═══════════════════════════════════════════
+var COORDS_VILLES = {
+  'valence':[44.933,4.892],'romans sur isere':[45.046,5.052],'montelimar':[44.558,4.752],
+  'grenoble':[45.188,5.724],'vienne':[45.523,4.874],'bourgoin':[45.585,5.291],
+  'annecy':[45.899,6.129],'chambery':[45.564,5.919],'albertville':[45.675,6.392],
+  'roanne':[46.034,4.069],'aubenas':[44.623,4.392],'privas':[44.735,4.599],
+  'tournon':[45.067,4.832],'nyons':[44.359,5.140],'crest':[44.728,5.023],
+  'la tour du pin':[45.564,5.441],'voiron':[45.363,5.590],'annonay':[45.241,4.669],
+  'bourg en bresse':[46.205,5.225],'aix les bains':[45.688,5.912],
+  'albon':[45.267,4.807],'alixan':[44.978,4.986],'andancette':[45.257,4.779],
+  'anneyron':[45.277,4.835],'barbieres':[44.897,5.094],'barcelonne':[44.937,5.191],
+  'baume cornillane':[44.797,4.994],'beaumont monteux':[44.874,4.916],
+  'beausemblant':[45.239,4.795],'morestel':[45.680,5.468],
+};
+
+function normaliserVille(v){
+  return v.toLowerCase()
+    .replace(/[éèêë]/g,'e').replace(/[àâä]/g,'a').replace(/[ùûü]/g,'u')
+    .replace(/[ôö]/g,'o').replace(/[îï]/g,'i').replace(/[ç]/g,'c')
+    .replace(/['"]/g,'').trim();
+}
+
+var vadVilles = []; // stocke les villes VAD augmentation
+
+async function importerVAD(event){
+  var file=event.target.files[0];if(!file)return;
+  fermerImport();
+  var r=new FileReader();
+  r.onload=async function(e){
+    var lines=e.target.result.split('\n').filter(function(l){return l.trim();});
+    var sep=lines[0].includes(';')?';':',';
+    var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+    var fv=h.findIndex(function(v){return v.includes('ville');}),
+        fs=h.findIndex(function(v){return v.includes('statut');}),
+        fd=h.findIndex(function(v){return v.includes('diff');}),
+        fn=h.findIndex(function(v){return v.includes('logements actuel');});
+
+    layerFree.clearLayers();
+    vadVilles=[];
+    var added=0,geocoded=0;
+
+    for(var i=1;i<lines.length;i++){
+      var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+      var statut=fs>=0?c[fs]:'';
+      if(!statut.toUpperCase().includes('AUGMENTATION'))continue;
+
+      var ville=fv>=0?c[fv]:'';
+      var diff=fd>=0?parseInt(c[fd].replace('+',''))||0:0;
+      var nb=fn>=0?parseInt(c[fn])||0:0;
+      if(!ville)continue;
+
+      added++;
+      var vn=normaliserVille(ville);
+      var coord=null;
+
+      // Chercher dans la base locale d'abord
+      Object.keys(COORDS_VILLES).forEach(function(k){
+        if(!coord&&(k===vn||vn.includes(k)||k.includes(vn)))coord=COORDS_VILLES[k];
+      });
+
+      // Si pas trouvé, géocoder via BAN
+      if(!coord){
+        try{
+          var q=encodeURIComponent(ville+' France');
+          var resp=await fetch('https://api-adresse.data.gouv.fr/search/?q='+q+'&type=municipality&limit=1');
+          var d=await resp.json();
+          if(d.features&&d.features.length>0){
+            var coords2=d.features[0].geometry.coordinates;
+            coord=[coords2[1],coords2[0]];
+            COORDS_VILLES[vn]=coord; // Cacher pour la prochaine fois
+            geocoded++;
+          }
+          await new Promise(function(r){setTimeout(r,60);});
+        }catch(ex){}
+      }
+
+      if(!coord)continue;
+
+      // Rayon proportionnel à la différence
+      var rayon=Math.max(6,Math.min(25,Math.sqrt(diff)*1.5));
+      var col='#cc44ff';
+
+      L.circleMarker(coord,{
+        radius:rayon,fillColor:col,color:'rgba(0,0,0,0.4)',
+        weight:2,opacity:0.8,fillOpacity:0.25
+      }).bindTooltip(
+        '<b style="color:'+col+'">🟣 FREE — '+ville+'</b><br>+'+diff+' logements · Total: '+nb,
+        {direction:'top'}
+      ).addTo(layerFree);
+
+      vadVilles.push({ville:ville,diff:diff,nb:nb,coord:coord});
+    }
+
+    majChips();
+    toast('🟣 FREE VAD: '+added+' villes en hausse ('+geocoded+' géocodées)');
+  };
+  r.readAsText(file,'utf-8');
+}
+  return new Promise(function(res){var r=new FileReader();r.onload=function(e){res(e.target.result);};r.readAsText(file,'utf-8');});
+}
+async function geocoderAdresse(adresse,commune,cp){
+  try{
+    var q=encodeURIComponent(adresse+' '+cp+' '+commune);
+    var r=await fetch('https://api-adresse.data.gouv.fr/search/?q='+q+'&limit=1');
+    var d=await r.json();
+    if(d.features&&d.features.length>0){var c=d.features[0].geometry.coordinates;return{lon:c[0],lat:c[1]};}
+  }catch(e){}
+  return null;
+}
+async function importerDADDI(event){
+  var file=event.target.files[0];if(!file)return;
+  fermerImport();toast('⏳ Géocodage DADDI...');
+  var text=await lireFichier(file);
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  var sep=lines[0].includes(';')?';':',';
+  var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+  var fi={
+    numero:h.findIndex(function(v){return v.includes('numerovoi');}),
+    compl:h.findIndex(function(v){return v.includes('complnumero');}),
+    voie:h.findIndex(function(v){return v.includes('nomvoie');}),
+    cp:h.findIndex(function(v){return v.includes('codepostal');}),
+    commune:h.findIndex(function(v){return v==='commune';}),
+    locaux:h.findIndex(function(v){return v.includes('nombrelogement');}),
+    mesc:h.findIndex(function(v){return v.includes('mescdate')||v==='mescdate';}),
+    dept:h.findIndex(function(v){return v==='dept';}),
+    prio:h.findIndex(function(v){return v.includes('priorite');}),
+    scoring:h.findIndex(function(v){return v==='scoring';}),
+    distKm:h.findIndex(function(v){return v.includes('distancekm');}),
+    arret:h.findIndex(function(v){return v.includes('arretcuivre');}),
+  };
+  var added=0,errors=0,limit=Math.min(lines.length,201);
+  for(var i=1;i<limit;i++){
+    var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+    var num=fi.numero>=0?c[fi.numero]:'',compl=fi.compl>=0?c[fi.compl]:'';
+    // Nettoyer les valeurs ambiguës
+    if(['ambigu','null','undefined','0'].includes(num.toLowerCase()))num='';
+    if(['ambigu','null','undefined'].includes(compl.toLowerCase()))compl='';
+    var voie=fi.voie>=0?c[fi.voie]:'',cp=fi.cp>=0?c[fi.cp]:'',com=fi.commune>=0?c[fi.commune]:'';
+    var nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
+    var mesc=fi.mesc>=0?c[fi.mesc]:'',dept=fi.dept>=0?c[fi.dept]:(cp?cp.substring(0,2):'');
+    var prio=fi.prio>=0?c[fi.prio]:'',scoring=fi.scoring>=0?c[fi.scoring]:'';
+    var arret=fi.arret>=0?parseInt(c[fi.arret])||0:0;
+    if(!voie||!cp)continue;
+    var adrStr=([num,compl].filter(Boolean).join(' ')+' '+voie).trim()+', '+cp+' '+com;
+    var id=adrStr+'_daddi_'+i;
+    if(points.find(function(p){return p.id===id;}))continue;
+    var coords=await geocoderAdresse([num,compl,voie].filter(Boolean).join(' '),com,cp);
+    if(!coords){errors++;continue;}
+    points.push({
+      id:id,adresse:adrStr,commune:com,dept:dept,locaux:nb,
+      lat:coords.lat,lon:coords.lon,
+      couleur:prio.includes('MAXIMALE')?'red':prio.includes('HAUTE')?'orange':'blue',
+      score:0,ptype:'daddi',jours_anniv:0,mesc:mesc,
+      source:'daddi',prio:prio,scoring:scoring,arretCuivre:arret,
+      date_import:today(),note:'',action:''
+    });
+    added++;
+    if(added%10===0)toast('⏳ DADDI: '+added+'...');
+    await new Promise(function(r){setTimeout(r,80);});
+  }
+  placerMarkers();majChips();
+  toast('✅ DADDI: '+added+' points ('+errors+' non trouvés)');
+}
+async function importerAnnivDADDI(event){
+  var file=event.target.files[0];if(!file)return;
+  fermerImport();toast('⏳ Géocodage Anniversaires...');
+  var text=await lireFichier(file);
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  var sep=lines[0].includes(';')?';':',';
+  var h=lines[0].split(sep).map(function(v){return v.trim().replace(/\uFEFF/g,'').replace(/"/g,'').toLowerCase();});
+  var fi={
+    jda:h.findIndex(function(v){return v==='jours_depuis_anniv';}),
+    type:h.findIndex(function(v){return v==='type_anniv';}),
+    numero:h.findIndex(function(v){return v.includes('numerovoi');}),
+    compl:h.findIndex(function(v){return v.includes('complnumero');}),
+    voie:h.findIndex(function(v){return v.includes('nomvoie');}),
+    cp:h.findIndex(function(v){return v.includes('codepostal');}),
+    commune:h.findIndex(function(v){return v==='commune';}),
+    locaux:h.findIndex(function(v){return v.includes('nombrelogement');}),
+    mesc:h.findIndex(function(v){return v.includes('mescdate');}),
+    dept:h.findIndex(function(v){return v==='dept';}),
+  };
+  var added=0,errors=0;
+  for(var i=1;i<lines.length;i++){
+    var c=lines[i].split(sep).map(function(v){return v.trim().replace(/"/g,'');});
+    var jda=fi.jda>=0?parseInt(c[fi.jda])||0:0;
+    if(jda<0||jda>45)continue;
+    var num=fi.numero>=0?c[fi.numero]:'',compl=fi.compl>=0?c[fi.compl]:'';
+    var voie=fi.voie>=0?c[fi.voie]:'',cp=fi.cp>=0?c[fi.cp]:'',com=fi.commune>=0?c[fi.commune]:'';
+    var nb=fi.locaux>=0?parseInt(c[fi.locaux])||0:0;
+    var mesc=fi.mesc>=0?c[fi.mesc]:'',dept=fi.dept>=0?c[fi.dept]:(cp?cp.substring(0,2):'');
+    var type=fi.type>=0?c[fi.type]:'1an';
+    if(!voie||!cp)continue;
+    var adrStr=([num,compl].filter(Boolean).join(' ')+' '+voie).trim()+', '+cp+' '+com;
+    var id=adrStr+'_anniv_'+i;
+    if(points.find(function(p){return p.id===id;}))continue;
+    var coords=await geocoderAdresse([num,compl,voie].filter(Boolean).join(' '),com,cp);
+    if(!coords){errors++;continue;}
+    points.push({id:id,adresse:adrStr,commune:com,dept:dept,locaux:nb,lat:coords.lat,lon:coords.lon,couleur:'',score:0,ptype:'anniv',jours_anniv:jda,mesc:mesc,anniv_type:type,note:'',action:''});
+    added++;
+    if(added%5===0)toast('⏳ Anniv: '+added+'...');
+    await new Promise(function(r){setTimeout(r,100);});
+  }
+  placerMarkers();majChips();
+  toast('✅ Anniversaires: '+added+' ('+errors+' non trouvés)');
+}
+
+// ═══════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════
+var _toastTimer;
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(function(){t.classList.remove('on');},3000);
+}
+</script>
+</body>
+</html>
