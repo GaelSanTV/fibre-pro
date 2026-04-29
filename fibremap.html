@@ -47,7 +47,7 @@ input[type=file]{display:none;}
 .bb-count{font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--muted);flex:1;min-width:100px;}
 .bb-btns{display:flex;gap:5px;flex-wrap:wrap;}
 .bb-btn{padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Syne',sans-serif;font-size:0.68rem;cursor:pointer;user-select:none;}
-.bb-btn.blue{color:var(--blue);border-color:rgba(0,200,255,0.3);background:rgba(0,200,255,0.08);}
+.bb-btn.active{background:rgba(0,200,255,0.15)!important;color:var(--blue)!important;border-color:rgba(0,200,255,0.5)!important;}
 .bb-btn.gold{color:var(--gold);border-color:rgba(255,215,0,0.3);}
 
 /* OVERLAYS — pointer-events:none sur conteneur, auto sur enfants */
@@ -208,6 +208,10 @@ input[type=file]{display:none;}
       <div class="leg-r"><div class="leg-d" style="background:var(--pink)"></div><span>🎂 Anniversaire</span></div>
       <div class="leg-r"><div class="leg-d" style="background:var(--blue)"></div><span>🔵 DADDI</span></div>
       <div class="leg-sep"></div>
+      <div class="leg-r"><div class="leg-d" style="background:#00ff88;box-shadow:0 0 4px #00ff88"></div><span>🆕 Importé aujourd'hui</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#ffaa00"></div><span>📅 2-7 jours</span></div>
+      <div class="leg-r"><div class="leg-d" style="background:#888"></div><span>📦 +7 jours</span></div>
+      <div class="leg-sep"></div>
       <div class="leg-r"><div class="leg-d" style="background:#ff2d55;opacity:0.6"></div><span>🔥 Visité &lt;30j</span></div>
       <div class="leg-r"><div class="leg-d" style="background:#ff9f0a;opacity:0.6"></div><span>🟠 30-90j</span></div>
       <div class="leg-r"><div class="leg-d" style="background:#30d158;opacity:0.6"></div><span>🟢 90-180j</span></div>
@@ -228,6 +232,10 @@ input[type=file]{display:none;}
   <div class="bb-btns">
     <button class="bb-btn" onclick="toggleLegend()">🗺</button>
     <button class="bb-btn" onclick="toggleCluster()">🔵</button>
+    <button class="bb-btn date-btn active" data-val="0" onclick="setDateFiltre(0)" title="Toutes dates">📅 TOUT</button>
+    <button class="bb-btn date-btn" data-val="1" onclick="setDateFiltre(1)" title="Importés aujourd'hui" style="color:#00ff88">🆕 JOUR</button>
+    <button class="bb-btn date-btn" data-val="7" onclick="setDateFiltre(7)" title="7 derniers jours" style="color:#ffaa00">📅 7J</button>
+    <button class="bb-btn date-btn" data-val="30" onclick="setDateFiltre(30)" title="30 derniers jours" style="color:#ff8800">📅 30J</button>
     <button class="bb-btn blue" onclick="exporterActifs()">📤 Actifs</button>
     <button class="bb-btn gold" onclick="exporterTraites()">📋 Traités</button>
     <button class="bb-btn" onclick="exporterCSVComplet()" style="color:#ff3355;border-color:rgba(255,34,68,0.3)">🗑️ CSV nettoyé</button>
@@ -322,6 +330,7 @@ var selectedPoint = null;
 // Layers — initialisés après load
 var map, layerOrange, layerSFR, layerBoth, layerAnniv, layerChaleur, layerDADDI, layerFree;
 var layersOn = {orange:true,sfr:true,both:true,anniv:true,chaleur:true,daddi:true,free:true};
+var dateImportFiltre = 0; // 0=tous, 1=aujourd'hui, 7=7 jours, 30=30 jours
 
 // ═══════════════════════════════════════════
 // INIT MAP
@@ -462,7 +471,7 @@ function placerMarkers(){
   [layerOrange,layerSFR,layerBoth,layerAnniv,layerDADDI].forEach(function(l){l.clearLayers();});
 
   var actifs = points.filter(function(p){
-    return !['done','bad','concurrent','signé'].includes(p.action) && p.score >= scoreMin && (p.locaux||0) >= locauxMin;
+    return !['done','bad','concurrent','signé'].includes(p.action) && p.score >= scoreMin && (p.locaux||0) >= locauxMin && filtreDate(p);
   });
 
   // Calculer score surpuissant sur tous les points
@@ -624,6 +633,7 @@ function importerFichier(event, type){
         score:   fi.score>=0    ? parseFloat(c[fi.score])||0 : 0,
         ptype:ptype, jours_anniv:jda,
         mesc: fi.mesc>=0 ? c[fi.mesc] : '',
+        date_import: today(),
         note:'', action:''
       });
       added++;
@@ -766,6 +776,26 @@ function filtrerLocaux(val){
   locauxMin=parseInt(val);
   document.getElementById('locauxVal').textContent=val+'+';
   placerMarkers();
+}
+
+function filtreDate(p){
+  if(dateImportFiltre===0) return true;
+  if(!p.date_import) return true;
+  var parts=p.date_import.split('-');
+  var d=new Date(parts[0],parts[1]-1,parts[2]);
+  var jours=Math.floor((new Date()-d)/86400000);
+  return jours<=dateImportFiltre;
+}
+
+function setDateFiltre(val){
+  dateImportFiltre=parseInt(val);
+  // Mettre à jour boutons
+  document.querySelectorAll('.date-btn').forEach(function(b){
+    b.classList.toggle('active', parseInt(b.dataset.val)===dateImportFiltre);
+  });
+  placerMarkers();
+  var labels={0:'TOUTES DATES',1:'AUJOURD\'HUI',7:'7 DERNIERS JOURS',30:'30 DERNIERS JOURS'};
+  toast('📅 '+labels[dateImportFiltre]);
 }
 
 // ═══════════════════════════════════════════
@@ -1200,7 +1230,7 @@ async function importerDADDI(event){
       couleur:prio.includes('MAXIMALE')?'red':prio.includes('HAUTE')?'orange':'blue',
       score:0,ptype:'daddi',jours_anniv:0,mesc:mesc,
       source:'daddi',prio:prio,scoring:scoring,arretCuivre:arret,
-      note:'',action:''
+      date_import:today(),note:'',action:''
     });
     added++;
     if(added%10===0)toast('⏳ DADDI: '+added+'...');
