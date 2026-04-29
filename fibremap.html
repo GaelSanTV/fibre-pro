@@ -27,7 +27,7 @@ button, .chip, .bb-btn, .sbtn {
 :root{--bg:#09090f;--surface:#111118;--surface2:#16161f;--border:#1f1f2e;--border2:#2a2a3e;--orange:#ff8c00;--red:#ff3355;--green:#00d46a;--blue:#00c8ff;--gold:#ffd700;--purple:#b06cff;--pink:#ff6eb4;--text:#eeeeff;--muted:#5555aa;}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow:hidden;}
-body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100%;height:-webkit-fill-available;}
 
 /* HEADER */
 .hdr{display:flex;align-items:center;gap:6px;padding:8px 12px;background:rgba(9,9,15,0.98);border-bottom:1px solid var(--border);z-index:10000;flex-shrink:0;position:relative;}
@@ -351,8 +351,32 @@ var dateImportFiltre = 0; // 0=tous, 1=aujourd'hui, 7=7 jours, 30=30 jours
 // INIT MAP
 // ═══════════════════════════════════════════
 // ── iOS TOUCH FIX ──────────────────────────────────────────
-// Force tous les boutons à répondre aux touches iOS
 document.addEventListener('touchstart', function(){}, {passive:true});
+
+// Fix hauteur iOS Safari — la barre d'adresse réduit window.innerHeight
+function fixIOSHeight(){
+  var vh = window.innerHeight;
+  document.body.style.height = vh + 'px';
+  var mapEl = document.getElementById('map');
+  if(mapEl){
+    var hdr = document.querySelector('.hdr');
+    var bar = document.querySelector('.bottom-bar');
+    var hdrH = hdr ? hdr.offsetHeight : 52;
+    var barH = bar ? bar.offsetHeight : 50;
+    mapEl.style.height = (vh - hdrH - barH) + 'px';
+  }
+  if(typeof map !== 'undefined' && map) map.invalidateSize();
+}
+
+window.addEventListener('resize', fixIOSHeight);
+window.addEventListener('orientationchange', function(){
+  setTimeout(fixIOSHeight, 300);
+});
+
+document.addEventListener('DOMContentLoaded', function(){
+  setTimeout(fixIOSHeight, 100);
+  setTimeout(fixIOSHeight, 500);
+});
 
 document.addEventListener('DOMContentLoaded', function(){
   map = L.map('map', {
